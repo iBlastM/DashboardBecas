@@ -1,0 +1,242 @@
+// ── GRAFICA_DEMOGRAFICO.JS ── DashboardBecas ──────────────────────────────────
+// Gráficas de la pestaña Demográfico:
+//   1. Composición por Género (donut)
+//   2. Índice de Paridad de Género (gauge)
+//   3. Concentración de Género por Sector (barras agrupadas)
+//   4. Pirámide de Edades por rangos (horizontal divergente)
+//   5. Edad Promedio por Nivel Educativo (barras)
+//   6. Índice de Rezago Educativo (barras)
+
+document.addEventListener('datosListos', () => {
+    const data = window.dashData;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 1. Composición por Género (donut)
+    // ═══════════════════════════════════════════════════════════════════════
+    const elGen = document.getElementById('chart-genero');
+    if (elGen) {
+        elGen.classList.remove('loading');
+        const conteo = contarPor(data, 'GENERO');
+        const labels = Object.keys(conteo);
+        const values = Object.values(conteo);
+        Plotly.newPlot(elGen, [{
+            type: 'pie',
+            hole: 0.52,
+            labels,
+            values,
+            marker: {
+                colors: [C.naranja, C.verde, '#A855F7', '#EC4899'],
+                line: { color: C.paperBg, width: 2 },
+            },
+            textfont: { color: '#FFFFFF', size: 13, family: C.fuente },
+            textinfo: 'label+percent',
+            hovertemplate: '<b>%{label}</b><br>%{value:,} becarios<br>%{percent}<extra></extra>',
+        }], getLayout('Composición por Género', {
+            showlegend: false,
+            margin: { t: 58, r: 10, b: 20, l: 10 },
+        }), plotConfig);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 2. Índice de Paridad de Género — IPG = Mujeres / Hombres (gauge)
+    // ═══════════════════════════════════════════════════════════════════════
+    const elPar = document.getElementById('chart-paridad');
+    if (elPar) {
+        elPar.classList.remove('loading');
+        const mujeres = data.filter(d => d.GENERO && d.GENERO.toUpperCase().startsWith('MUJ')).length;
+        const hombres = data.filter(d => d.GENERO && (d.GENERO.toUpperCase().startsWith('HOM') || d.GENERO.toUpperCase().startsWith('MAS'))).length;
+        const ipg = hombres > 0 ? +(mujeres / hombres).toFixed(3) : 0;
+
+        Plotly.newPlot(elPar, [{
+            type: 'indicator',
+            mode: 'gauge+number+delta',
+            value: ipg,
+            delta: {
+                reference: 1.0,
+                increasing: { color: C.verde },
+                decreasing: { color: C.naranja },
+            },
+            gauge: {
+                axis: { range: [0, 2], tickcolor: '#FFFFFF', tickfont: { color: '#FFF', size: 11 } },
+                bar: { color: C.verde, thickness: 0.28 },
+                bgcolor: C.plotBg,
+                bordercolor: 'rgba(255,255,255,0.18)',
+                steps: [
+                    { range: [0,   0.9], color: 'rgba(239,68,68,0.15)'    },
+                    { range: [0.9, 1.1], color: 'rgba(82,188,163,0.18)'   },
+                    { range: [1.1, 2],   color: 'rgba(168,85,247,0.15)'   },
+                ],
+                threshold: { line: { color: '#FFFFFF', width: 2 }, value: 1.0 },
+            },
+            number: { font: { size: 30, color: '#FFF', family: C.fuente } },
+        }], getLayout('Índice de Paridad de Género\nIPG = Mujeres / Hombres  ·  Ideal: 1.0', {
+            margin: { t: 68, r: 30, b: 10, l: 30 },
+        }), plotConfig);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 3. Concentración de Género por Sector (barras agrupadas)
+    // ═══════════════════════════════════════════════════════════════════════
+    const elGS = document.getElementById('chart-genero-sector');
+    if (elGS) {
+        elGS.classList.remove('loading');
+        const sectores = [...new Set(data.map(d => d.SECTOR))].filter(Boolean).sort();
+        const gMap = [
+            { key: 'MUJ', label: 'Mujer',  color: C.naranja },
+            { key: 'HOM', label: 'Hombre', color: C.verde   },
+            { key: 'MAS', label: 'Masculino', color: C.verde },
+        ];
+        // Detectar etiquetas reales en el dataset
+        const generosUnicos = [...new Set(data.map(d => d.GENERO).filter(Boolean))];
+        const traces = generosUnicos.map((g, i) => ({
+            type: 'bar',
+            name: g.charAt(0) + g.slice(1).toLowerCase(),
+            x: sectores,
+            y: sectores.map(s => data.filter(d => d.SECTOR === s && d.GENERO === g).length),
+            marker: { color: C.paleta[i % C.paleta.length] },
+            text: sectores.map(s => data.filter(d => d.SECTOR === s && d.GENERO === g).length.toLocaleString('es-MX')),
+            textposition: 'outside',
+            textfont: { color: '#FFF', size: 11 },
+            hovertemplate: '<b>%{x}</b> · ' + g + '<br>%{y:,} becarios<extra></extra>',
+        }));
+        Plotly.newPlot(elGS, traces, getLayout('Género por Sector', {
+            barmode: 'group',
+            yaxis: { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
+            margin: { t: 58, r: 18, b: 58, l: 72 },
+        }), plotConfig);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 4. Pirámide de Edades (horizontal divergente Mujer ← | → Hombre)
+    // ═══════════════════════════════════════════════════════════════════════
+    const elPir = document.getElementById('chart-piramide');
+    if (elPir) {
+        elPir.classList.remove('loading');
+        const generosUnicos = [...new Set(data.map(d => d.GENERO).filter(Boolean))];
+        const esMujer  = g => g && (g.toUpperCase().startsWith('MUJ') || g.toUpperCase().startsWith('FEM'));
+        const esHombre = g => g && (g.toUpperCase().startsWith('HOM') || g.toUpperCase().startsWith('MAS'));
+
+        const rangos = [[0,5],[6,8],[9,11],[12,14],[15,17],[18,20],[21,24],[25,29],[30,99]];
+        const etiq   = ['0–5','6–8','9–11','12–14','15–17','18–20','21–24','25–29','30+'];
+
+        const cuenta = (fn, [min, max]) =>
+            data.filter(d => fn(d.GENERO) && d.EDAD >= min && d.EDAD <= max).length;
+
+        const yM = rangos.map(r => -cuenta(esMujer,  r));
+        const yH = rangos.map(r =>  cuenta(esHombre, r));
+
+        Plotly.newPlot(elPir, [
+            {
+                type: 'bar', orientation: 'h', name: 'Mujer',
+                x: yM, y: etiq,
+                marker: { color: C.naranja },
+                customdata: yM.map(v => Math.abs(v)),
+                text: yM.map(v => Math.abs(v).toLocaleString('es-MX')),
+                textposition: 'outside',
+                textfont: { color: '#FFF', size: 10 },
+                hovertemplate: '<b>%{y}</b><br>%{customdata:,} mujeres<extra></extra>',
+            },
+            {
+                type: 'bar', orientation: 'h', name: 'Hombre',
+                x: yH, y: etiq,
+                marker: { color: C.verde },
+                text: yH.map(v => v.toLocaleString('es-MX')),
+                textposition: 'outside',
+                textfont: { color: '#FFF', size: 10 },
+                hovertemplate: '<b>%{y}</b><br>%{value:,} hombres<extra></extra>',
+            },
+        ], getLayout('Pirámide de Edades', {
+            barmode: 'overlay',
+            xaxis: {
+                title: 'Becarios',
+                tickvals: [],
+                zeroline: true,
+                zerolinecolor: 'rgba(255,255,255,0.4)',
+                zerolinewidth: 2,
+            },
+            yaxis: { title: 'Rango de Edad' },
+            margin: { t: 58, r: 80, b: 48, l: 60 },
+            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
+        }), plotConfig);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 5. Edad Promedio por Nivel Educativo (barras)
+    // ═══════════════════════════════════════════════════════════════════════
+    const elEN = document.getElementById('chart-edad-nivel');
+    if (elEN) {
+        elEN.classList.remove('loading');
+        const promedios = promediarPor(data, 'NIVEL_EDUCATIVO', 'EDAD');
+        const niveles   = Object.keys(promedios).filter(n => n && n !== 'Sin dato').sort();
+        const vals      = niveles.map(n => +promedios[n].toFixed(1));
+
+        Plotly.newPlot(elEN, [{
+            type: 'bar',
+            x: niveles,
+            y: vals,
+            marker: { color: C.paleta.slice(0, niveles.length) },
+            text: vals.map(v => v.toFixed(1) + ' años'),
+            textposition: 'outside',
+            textfont: { color: '#FFF', size: 13 },
+            cliponaxis: false,
+            hovertemplate: '<b>%{x}</b><br>Edad promedio: %{y:.1f} años<extra></extra>',
+        }], getLayout('Edad Promedio por Nivel Educativo', {
+            yaxis: {
+                title: 'Edad (años)',
+                gridcolor: 'rgba(255,255,255,0.08)',
+                range: [0, Math.max(...vals) * 1.3],
+            },
+            margin: { t: 58, r: 18, b: 58, l: 72 },
+        }), plotConfig);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 6. Índice de Rezago Educativo
+    //    Alumnos con edad > (edad esperada para su grado + 2 años)
+    //    Primaria:  grado N → edad esperada = 5 + N
+    //    Secundaria: grado N → edad esperada = 11 + N
+    // ═══════════════════════════════════════════════════════════════════════
+    const elRez = document.getElementById('chart-rezago');
+    if (elRez) {
+        elRez.classList.remove('loading');
+
+        const rezagoN = {}, totalN = {};
+
+        data.forEach(d => {
+            if (!d.NIVEL_EDUCATIVO || d.GRADO <= 0) return;
+            const nivel = d.NIVEL_EDUCATIVO.toUpperCase();
+            let edadEsp;
+            if (nivel === 'PRIMARIA')    edadEsp = 5  + d.GRADO;
+            else if (nivel === 'SECUNDARIA') edadEsp = 11 + d.GRADO;
+            else return;
+
+            totalN[nivel]  = (totalN[nivel] || 0) + 1;
+            if (d.EDAD > edadEsp + 2) {
+                rezagoN[nivel] = (rezagoN[nivel] || 0) + 1;
+            }
+        });
+
+        const niveles = Object.keys(totalN).sort();
+        const pcts  = niveles.map(n => +(( (rezagoN[n] || 0) / totalN[n]) * 100).toFixed(2));
+        const maxPct = Math.max(...pcts, 1);
+
+        Plotly.newPlot(elRez, [{
+            type: 'bar',
+            x: niveles,
+            y: pcts,
+            marker: { color: pcts.map(v => v > 10 ? '#EF4444' : v > 5 ? C.naranja : C.verde) },
+            text: pcts.map(v => v.toFixed(1) + '%'),
+            textposition: 'outside',
+            textfont: { color: '#FFF', size: 14 },
+            cliponaxis: false,
+            hovertemplate: '<b>%{x}</b><br>Rezago estimado: %{y:.1f}%<extra></extra>',
+        }], getLayout('Índice de Rezago Educativo · Alumnos con Edad > Norma + 2 Años', {
+            yaxis: {
+                title: '% de alumnos con rezago',
+                gridcolor: 'rgba(255,255,255,0.08)',
+                range: [0, maxPct * 1.5],
+            },
+            margin: { t: 58, r: 18, b: 58, l: 80 },
+        }), plotConfig);
+    }
+});

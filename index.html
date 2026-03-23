@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Becas Académicas 2021-2025</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Oswald:wght@400;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/styles.css">
+
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+</head>
+<body>
+
+<!-- ── TOP BAR ──────────────────────────────────────────────────────────── -->
+<header class="top-bar">
+    <div class="top-bar-inner">
+        <h1 class="dashboard-title">Becas Académicas 2021-2025</h1>
+        <span class="dashboard-subtitle">Panel de Indicadores · Gobierno de Querétaro</span>
+    </div>
+</header>
+
+<!-- ── BANNER DE ERROR ──────────────────────────────────────────────────── -->
+<div id="error-msg" class="error-banner" style="display:none;">
+    No se pudo cargar <code>data_dashboard.json</code>.
+    Ejecuta primero <code>python preprocesar.py</code> y luego sirve el dashboard desde un
+    servidor local: <code>python -m http.server 8080</code> en la carpeta <code>DashboardBecas</code>.
+</div>
+
+<!-- ── BARRA DE FILTROS ──────────────────────────────────────── -->
+<div class="filtros-bar">
+    <div class="filtros-inner">
+        <span class="filtros-titulo">Filtrar por</span>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label" for="filtro-nivel">Nivel Educativo</label>
+            <select id="filtro-nivel" class="filtro-select">
+                <option value="">Todos</option>
+                <option value="PRIMARIA">Primaria</option>
+                <option value="SECUNDARIA">Secundaria</option>
+                <option value="UNIVERSIDAD">Universidad</option>
+            </select>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label" for="filtro-sector">Sector</label>
+            <select id="filtro-sector" class="filtro-select">
+                <option value="">Todos</option>
+                <option value="PUBLICA">Público</option>
+                <option value="PRIVADA">Privado</option>
+            </select>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label" for="filtro-anio">Año</label>
+            <select id="filtro-anio" class="filtro-select">
+                <option value="">Todos</option>
+                <option value="2021">2021</option>
+                <option value="2022">2022</option>
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+            </select>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label" for="filtro-etapa">Etapa</label>
+            <select id="filtro-etapa" class="filtro-select">
+                <option value="">Todas</option>
+                <option value="1RA ETAPA">1ª Etapa</option>
+                <option value="2DA ETAPA">2ª Etapa</option>
+                <option value="EXTRAORDINARIA">Extraordinaria</option>
+            </select>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label" for="filtro-tipo">Tipo de Beca</label>
+            <select id="filtro-tipo" class="filtro-select">
+                <option value="">Todos</option>
+                <option value="PRIMARIA">Primaria</option>
+                <option value="SECUNDARIA">Secundaria</option>
+                <option value="PRIMARIA EXCELENCIA">Primaria Excelencia</option>
+                <option value="SECUNDARIA EXCELENCIA">Secundaria Excelencia</option>
+            </select>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label" for="filtro-escuela">Escuela</label>
+            <select id="filtro-escuela" class="filtro-select filtro-select-lg">
+                <option value="">Todas</option>
+            </select>
+        </div>
+
+        <button id="filtro-limpiar" class="filtro-btn-limpiar">Limpiar</button>
+        <span id="filtro-count" class="filtro-count"></span>
+    </div>
+</div>
+
+<!-- ── KPI CARDS ─────────────────────────────────────────────────────────── -->
+<div class="container kpi-wrapper">
+    <section class="section">
+        <h2 class="section-title">Indicadores Globales</h2>
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <span class="kpi-label">Total Beneficiarios</span>
+                <span class="kpi-value" id="kpi-total-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Inversión Total</span>
+                <span class="kpi-value" id="kpi-inversion-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Importe Promedio</span>
+                <span class="kpi-value" id="kpi-promedio-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Edad Promedio</span>
+                <span class="kpi-value" id="kpi-edad-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">1ª Etapa</span>
+                <span class="kpi-value" id="kpi-etapa1-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">2ª Etapa</span>
+                <span class="kpi-value" id="kpi-etapa2-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Sector Público</span>
+                <span class="kpi-value" id="kpi-publico-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Sector Privado</span>
+                <span class="kpi-value" id="kpi-privado-val">—</span>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- ── NAVEGACIÓN POR PESTAÑAS ───────────────────────────────────────────── -->
+<nav id="tabs-nav" class="tabs-nav" aria-label="Secciones del dashboard"></nav>
+
+<!-- ── PANELES DE CONTENIDO ──────────────────────────────────────────────── -->
+<main id="tab-panels" class="container"></main>
+
+<!-- ── FOOTER ────────────────────────────────────────────────────────────── -->
+<footer class="footer">
+    <span>Becas Académicas 2021–2025 · Gobierno de Querétaro</span>
+    <span>Fuente: BECAS_COMPLETO_LIMPIO.json · Procesado con preprocesar.py</span>
+</footer>
+
+<!-- ── SCRIPTS ────────────────────────────────────────────────────────────
+     Orden: config → cargarDatos → módulos de gráficas
+     cargarDatos.js dispara el evento 'datosListos' que activa cada gráfica.
+─────────────────────────────────────────────────────────────────────────── -->
+<script src="js/config.js"></script>
+<script src="js/cargarDatos.js"></script>
+<script src="js/filtros.js"></script>
+<script src="js/tabs.js"></script>
+
+<!-- KPI cards -->
+<script src="js/kpis.js"></script>
+
+<!-- Gráficas por sección -->
+<script src="js/graficaDemografico.js"></script>
+<script src="js/graficaFamiliar.js"></script>
+<script src="js/graficaAcademico.js"></script>
+<script src="js/graficaEconomico.js"></script>
+<script src="js/graficaTerritorial.js"></script>
+<script src="js/graficaElectoral.js"></script>
+<script src="js/graficaComparativo.js"></script>
+
+<!-- Orquestador: carga partials y arranca datos -->
+<script src="js/loader.js"></script>
+
+</body>
+</html>
