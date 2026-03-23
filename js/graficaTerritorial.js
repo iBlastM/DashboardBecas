@@ -228,58 +228,117 @@ document.addEventListener('datosListos', () => {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 5. Mapa de Calor — Treemap de concentración por Colonia
+    // 5. Mapa Coroplético Geográfico — Beneficiarios por Colonia
     // ═══════════════════════════════════════════════════════════════════════
-    const elMC = document.getElementById('chart-calor-colonia');
-    if (elMC) {
-        elMC.classList.remove('loading');
+    const elMAP = document.getElementById('chart-mapa-colonias');
+    if (elMAP) {
+        elMAP.classList.remove('loading');
 
-        const conteo = contarPor(data.filter(d => d.COLONIA), 'COLONIA');
-        const sumas  = sumarPor(data.filter(d => d.COLONIA), 'COLONIA', 'IMPORTE');
+        const conteoCol = contarPor(data.filter(d => d.COLONIA), 'COLONIA');
+        const sumasCol  = sumarPor(data.filter(d => d.COLONIA), 'COLONIA', 'IMPORTE');
 
-        // Limitar a las 60 colonias con más beneficiarios para rendimiento
-        const TOP = 60;
-        const ranking = sortedDesc(conteo).slice(0, TOP);
+        (async () => {
+            try {
+                const [respGeo, respMun] = await Promise.all([
+                    fetch('GeoJsons/COL_LOC_EDO_QRO.geojson'),
+                    fetch('GeoJsons/Corregidora.geojson'),
+                ]);
+                const [geojson, munGeo] = await Promise.all([respGeo.json(), respMun.json()]);
 
-        const ids      = ['Total', ...ranking.map(r => r[0])];
-        const labels   = ['Total', ...ranking.map(r => r[0])];
-        const parents  = ['',      ...ranking.map(() => 'Total')];
-        const values   = [0,       ...ranking.map(r => r[1])];
-        const texts    = ['',      ...ranking.map(r =>
-            r[0] + '<br>' + r[1].toLocaleString('es-MX') + ' becarios<br>$' +
-            (sumas[r[0]] || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 })
-        )];
+                // Colonias — solo las que tienen datos
+                const locs  = [];
+                const vals  = [];
+                const texts = [];
 
-        Plotly.newPlot(elMC, [{
-            type: 'treemap',
-            ids,
-            labels,
-            parents,
-            values,
-            branchvalues: 'total',
-            text: texts,
-            textinfo: 'text',
-            marker: {
-                colors: values,
-                colorscale: [
-                    [0,   'rgba(57,48,83,0.6)'],
-                    [0.5, 'rgba(82,188,163,0.7)'],
-                    [1,   'rgb(229,134,6)'],
-                ],
-                showscale: true,
-                colorbar: {
-                    title: { text: 'Becarios', font: { color: '#FFF', size: 11 } },
-                    tickfont: { color: '#FFF', size: 10 },
-                    thickness: 14,
-                },
-                line: { color: C.paperBg, width: 1 },
-            },
-            textfont: { size: 11, color: '#FFFFFF', family: C.fuente },
-            pathbar: { visible: false },
-            hovertemplate: '<b>%{label}</b><br>%{value:,} beneficiarios<br>%{percentRoot:.1%} del total<extra></extra>',
-        }], getLayout('Mapa de Calor — Concentración de Becas por Colonia (Top 60)', {
-            paper_bgcolor: C.paperBg,
-            margin: { t: 58, r: 10, b: 10, l: 10 },
-        }), plotConfig);
+                geojson.features.forEach(f => {
+                    const nom = f.properties && f.properties.NOM_COL;
+                    if (nom && conteoCol[nom]) {
+                        locs.push(nom);
+                        vals.push(conteoCol[nom]);
+                        texts.push(
+                            `<b>${nom}</b><br>` +
+                            `${conteoCol[nom].toLocaleString('es-MX')} becarios<br>` +
+                            `$${(sumasCol[nom] || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 })}`
+                        );
+                    }
+                });
+
+                const zmax = Math.max(...vals);
+
+                // Contorno del municipio → scattermapbox lines
+                const munLat = [], munLon = [];
+                munGeo.features.forEach(f => {
+                    const geom = f.geometry;
+                    const rings = geom.type === 'Polygon'
+                        ? [geom.coordinates[0]]
+                        : geom.type === 'MultiPolygon'
+                            ? geom.coordinates.map(p => p[0])
+                            : [];
+                    rings.forEach(ring => {
+                        ring.forEach(([lon, lat]) => { munLon.push(lon); munLat.push(lat); });
+                        munLon.push(null); munLat.push(null);
+                    });
+                });
+
+                Plotly.newPlot(elMAP, [
+                    {
+                        type: 'choroplethmapbox',
+                        geojson: geojson,
+                        featureidkey: 'properties.NOM_COL',
+                        locations: locs,
+                        z: vals,
+                        text: texts,
+                        hoverinfo: 'text',
+                        colorscale: [
+                            [0,    'rgb(255,230,180)'],
+                            [0.25, 'rgb(255,180,80)'],
+                            [0.55, 'rgb(220,60,30)'],
+                            [1,    'rgb(160,10,10)'],
+                        ],
+                        zmin: 0,
+                        zmax: zmax,
+                        colorbar: {
+                            title: { text: 'Beneficiarios', font: { color: '#FFF', size: 10 } },
+                            tickfont: { color: '#FFF', size: 10 },
+                            thickness: 12,
+                            bgcolor:     'rgba(57,48,83,0.55)',
+                            bordercolor: 'rgba(255,255,255,0.14)',
+                            borderwidth: 1,
+                        },
+                        marker: { line: { width: 0 } },
+                        showlegend: false,
+                    },
+                    {
+                        type: 'scattermapbox',
+                        mode: 'lines',
+                        lon: munLon,
+                        lat: munLat,
+                        line: { color: C.naranja, width: 2 },
+                        name: 'Municipio Corregidora',
+                        hoverinfo: 'none',
+                    },
+                ], getLayout('Distribución de Beneficiarios por Colonia', {
+                    mapbox: {
+                        style: 'carto-darkmatter',
+                        center: { lat: 20.465, lon: -100.435 },
+                        zoom: 10,
+                    },
+                    legend: {
+                        orientation: 'h',
+                        x: 0.5, xanchor: 'center',
+                        y: -0.04,
+                        font: { color: '#FFF', size: 11 },
+                        bgcolor: 'rgba(0,0,0,0)',
+                    },
+                    margin: { t: 58, r: 10, b: 40, l: 10 },
+                }), plotConfig);
+
+            } catch (err) {
+                console.error('[MapaColonias]', err);
+                elMAP.innerHTML =
+                    '<p style="color:#fca5a5;padding:2rem;text-align:center">' +
+                    'Error al cargar el GeoJSON de colonias.</p>';
+            }
+        })();
     }
 });
