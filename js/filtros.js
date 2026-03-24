@@ -43,9 +43,22 @@
 
         if (f.nivel)   filtered = filtered.filter(d => d.NIVEL_EDUCATIVO === f.nivel);
         if (f.sector)  filtered = filtered.filter(d => d.SECTOR          === f.sector);
-        if (f.anio)    filtered = filtered.filter(d => d.AÑO             === f.anio);
-        if (f.etapa)   filtered = filtered.filter(d => d.ETAPA           === f.etapa);
-        if (f.tipo)    filtered = filtered.filter(d => d.TIPO_BECA       === f.tipo);
+        // AÑO: el beneficiario puede tener becas en múltiples años — usar array AÑOS
+        if (f.anio)    filtered = filtered.filter(d =>
+            Array.isArray(d.AÑOS) ? d.AÑOS.includes(Number(f.anio)) : d.AÑO === f.anio
+        );
+        // ETAPA / TIPO: comparar contra BECAS si disponible, si no usar campo representativo
+        if (f.etapa)   filtered = filtered.filter(d =>
+            Array.isArray(d.BECAS) && d.BECAS.length > 0
+                ? d.BECAS.some(b => b.PERIODO && b.PERIODO.split('-').slice(1).join('-') ===
+                    (f.etapa === '1RA ETAPA' ? 'E1' : f.etapa === '2DA ETAPA' ? 'E2' : 'EX'))
+                : d.ETAPA === f.etapa
+        );
+        if (f.tipo)    filtered = filtered.filter(d =>
+            Array.isArray(d.BECAS) && d.BECAS.length > 0
+                ? d.BECAS.some(b => b.TIPO_BECA === f.tipo)
+                : d.TIPO_BECA === f.tipo
+        );
         if (f.escuela) filtered = filtered.filter(d => d.ESCUELA         === f.escuela);
 
         window.dashData = filtered;

@@ -1,10 +1,11 @@
 // ── GRAFICA_COMPARATIVO.JS ── DashboardBecas ──────────────────────────────────
-// Gráficas de la pestaña Comparativo:
-//   1. Beneficiarios por Periodo (barras)
-//   2. Inversión Total por Periodo (barras)
+// Gráficas de la pestaña Comparativo (datos por BENEFICIARIO ÚNICO):
+//   1. Beneficiarios únicos por Periodo (barras) — un beneficiario en múltiples
+//      periodos cuenta en cada uno de ellos
+//   2. Inversión Total por Periodo (barras) — suma de BECAS.IMPORTE del periodo
 //   3. Variación de Beneficiarios entre Periodos (línea + delta Δ%)
-//   4. Importe Promedio por Periodo (línea)
-//   5. Beneficiarios por Tipo de Beca × Periodo (barras agrupadas)
+//   4. Importe Promedio por Beca por Periodo (línea)
+//   5. Becas por Tipo × Periodo (barras agrupadas)
 //   6. Composición del Mix de Tipos de Beca por Periodo (barras 100% apiladas)
 
 document.addEventListener('datosListos', () => {
@@ -17,12 +18,35 @@ document.addEventListener('datosListos', () => {
     });
 
     const periodosPresentes = TODOS_PERIODOS.filter(p =>
-        data.some(d => d.PERIODO === p)
+        data.some(d =>
+            Array.isArray(d.PERIODOS) ? d.PERIODOS.includes(p) : d.PERIODO === p
+        )
     );
 
     if (periodosPresentes.length === 0) return;
 
-    const filterP = p => data.filter(d => d.PERIODO === p);
+    // Con beneficiarios únicos, cada uno tiene PERIODOS[] con todos sus periodos
+    const filterP = p => data.filter(d =>
+        Array.isArray(d.PERIODOS) ? d.PERIODOS.includes(p) : d.PERIODO === p
+    );
+
+    // Inversión real por periodo: suma de cada beca individual (campo BECAS)
+    const invEnPeriodo = (p) => data.reduce((sum, d) => {
+        if (Array.isArray(d.BECAS) && d.BECAS.length > 0) {
+            return sum + d.BECAS
+                .filter(b => b.PERIODO === p)
+                .reduce((s, b) => s + (b.IMPORTE || 0), 0);
+        }
+        return sum + (d.PERIODO === p ? d.IMPORTE : 0);
+    }, 0);
+
+    // Número de becas (no beneficiarios) otorgadas en un periodo
+    const becasEnPeriodo = (p) => data.reduce((cnt, d) => {
+        if (Array.isArray(d.BECAS) && d.BECAS.length > 0) {
+            return cnt + d.BECAS.filter(b => b.PERIODO === p).length;
+        }
+        return cnt + (d.PERIODO === p ? 1 : 0);
+    }, 0);
     const fmt     = (v, opts) => (v || 0).toLocaleString('es-MX', opts || {});
 
     // Etiqueta legible: "2022-E1" → "1ª Etapa\n2022"
@@ -40,14 +64,14 @@ document.addEventListener('datosListos', () => {
     const colorP = p => PERIODO_COLORS[periodosPresentes.indexOf(p)] || C.paleta[0];
 
     // Pre-calcular métricas por periodo
-    const nPeriodo    = {};
-    const invPeriodo  = {};
-    const promPeriodo = {};
+    const nPeriodo    = {};  // beneficiarios únicos con beca en ese periodo
+    const invPeriodo  = {};  // inversión real del periodo (desde BECAS detalle)
+    const promPeriodo = {};  // importe promedio por beca en el periodo
     periodosPresentes.forEach(p => {
-        const sub = filterP(p);
-        nPeriodo[p]    = sub.length;
-        invPeriodo[p]  = sub.reduce((s, d) => s + d.IMPORTE, 0);
-        promPeriodo[p] = sub.length > 0 ? invPeriodo[p] / sub.length : 0;
+        nPeriodo[p]    = filterP(p).length;
+        invPeriodo[p]  = invEnPeriodo(p);
+        const becasCnt = becasEnPeriodo(p);
+        promPeriodo[p] = becasCnt > 0 ? invPeriodo[p] / becasCnt : 0;
     });
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -208,12 +232,23 @@ document.addEventListener('datosListos', () => {
             'UNIVERSIDAD':           '#A855F7',
         };
 
-        const tipos = [...new Set(data.map(d => d.TIPO_BECA).filter(Boolean))].sort();
+        // Con beneficiarios únicos, contar por tipo usando el detalle de BECAS
+        const tiposSet = new Set();
+        data.forEach(d => {
+            if (Array.isArray(d.BECAS)) d.BECAS.forEach(b => { if (b.TIPO_BECA) tiposSet.add(b.TIPO_BECA); });
+            else if (d.TIPO_BECA) tiposSet.add(d.TIPO_BECA);
+        });
+        const tipos = [...tiposSet].sort();
+
+        const countTipoEnPeriodo = (p, tipo) => data.reduce((cnt, d) => {
+            if (Array.isArray(d.BECAS) && d.BECAS.length > 0) {
+                return cnt + d.BECAS.filter(b => b.PERIODO === p && b.TIPO_BECA === tipo).length;
+            }
+            return cnt + (d.PERIODO === p && d.TIPO_BECA === tipo ? 1 : 0);
+        }, 0);
 
         const traces = tipos.map((tipo, i) => {
-            const yVals = periodosPresentes.map(p =>
-                filterP(p).filter(d => d.TIPO_BECA === tipo).length
-            );
+            const yVals = periodosPresentes.map(p => countTipoEnPeriodo(p, tipo));
             return {
                 type: 'bar',
                 name: tipo,
@@ -224,11 +259,11 @@ document.addEventListener('datosListos', () => {
                 textposition: 'outside',
                 textfont: { color: '#FFF', size: 10 },
                 cliponaxis: false,
-                hovertemplate: '<b>%{x}</b> · ' + tipo + '<br>%{y:,} becarios<extra></extra>',
+                hovertemplate: '<b>%{x}</b> · ' + tipo + '<br>%{y:,} becas<extra></extra>',
             };
         });
 
-        Plotly.newPlot(el5, traces, getLayout('Beneficiarios por Tipo de Beca y Periodo', {
+        Plotly.newPlot(el5, traces, getLayout('Becas por Tipo y Periodo', {
             barmode: 'group',
             xaxis: { type: 'category', title: 'Periodo' },
             yaxis: { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
@@ -252,12 +287,22 @@ document.addEventListener('datosListos', () => {
             'UNIVERSIDAD':           '#A855F7',
         };
 
-        const tipos = [...new Set(data.map(d => d.TIPO_BECA).filter(Boolean))].sort();
+        const tiposSet6 = new Set();
+        data.forEach(d => {
+            if (Array.isArray(d.BECAS)) d.BECAS.forEach(b => { if (b.TIPO_BECA) tiposSet6.add(b.TIPO_BECA); });
+            else if (d.TIPO_BECA) tiposSet6.add(d.TIPO_BECA);
+        });
+        const tipos6 = [...tiposSet6].sort();
 
-        const traces = tipos.map((tipo, i) => {
+        const traces = tipos6.map((tipo, i) => {
             const yVals = periodosPresentes.map(p => {
-                const total = nPeriodo[p];
-                const cnt   = filterP(p).filter(d => d.TIPO_BECA === tipo).length;
+                const total = becasEnPeriodo(p);
+                const cnt   = data.reduce((c, d) => {
+                    if (Array.isArray(d.BECAS) && d.BECAS.length > 0) {
+                        return c + d.BECAS.filter(b => b.PERIODO === p && b.TIPO_BECA === tipo).length;
+                    }
+                    return c + (d.PERIODO === p && d.TIPO_BECA === tipo ? 1 : 0);
+                }, 0);
                 return total > 0 ? +(cnt / total * 100).toFixed(1) : 0;
             });
             return {

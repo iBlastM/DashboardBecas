@@ -35,16 +35,25 @@ async function cargarDatos() {
             d.EDAD               = Number(d.EDAD)               || 0;
             d.EDAD_TUTOR         = Number(d.EDAD_TUTOR)         || 0;
             d.GRADO              = Number(d.GRADO)              || 0;
+            d.NUM_BECAS          = Number(d.NUM_BECAS)          || 1;
             d.AÑO                = String(d.AÑO                 || '');
             d.SECCION_ELECTORAL  = d.SECCION_ELECTORAL  != null ? Number(d.SECCION_ELECTORAL)  : null;
             d.DISTRITO_FEDERAL   = d.DISTRITO_FEDERAL   != null ? Number(d.DISTRITO_FEDERAL)   : null;
             d.DISTRITO_LOCAL     = d.DISTRITO_LOCAL     != null ? Number(d.DISTRITO_LOCAL)      : null;
 
-            // Periodo para comparativo: "2022-E1", "2022-E2", "2022-EX"
+            // Asegurar que los campos de agregación sean arrays
+            if (!Array.isArray(d.AÑOS))     d.AÑOS     = d.AÑO     ? [Number(d.AÑO)]  : [];
+            if (!Array.isArray(d.PERIODOS)) d.PERIODOS = [];
+            if (!Array.isArray(d.BECAS))    d.BECAS    = [];
+
+            // Periodo representativo (beca más reciente) para compatibilidad con gráficas
             const etapaCode =
                 d.ETAPA === '1RA ETAPA'      ? 'E1' :
                 d.ETAPA === '2DA ETAPA'      ? 'E2' : 'EX';
             d.PERIODO = d.AÑO + '-' + etapaCode;
+
+            // Si PERIODOS vino vacío, inferirlo del PERIODO representativo
+            if (d.PERIODOS.length === 0 && d.PERIODO) d.PERIODOS = [d.PERIODO];
 
             // Grupo de edad del becario
             const bins   = [0,  6,  9, 12, 15, 18, 25, Infinity];

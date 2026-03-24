@@ -1,12 +1,14 @@
 """split_data.py — DashboardBecas
 
-Divide data_dashboard.json (200 MB) en dos archivos más pequeños
-para cumplir el límite de 100 MB/archivo de GitHub:
+Divide data_dashboard.json en dos archivos para cumplir el límite de 100 MB/archivo de GitHub:
 
-  data_a.json — datos demográficos, académicos, económicos y de filtros
+  data_a.json — datos demográficos, académicos, económicos, filtros y becas
   data_b.json — escuela + territorial + familiar + electoral
 
 Elimina MUNICIPIO, LATITUD y LONGITUD (no se usan en ninguna gráfica).
+
+Los campos NUM_BECAS, AÑOS, PERIODOS y BECAS (agregados por beneficiario único)
+se incluyen en data_a.json.
 
 Uso:
     cd d:\\Metrix\\DashboardBecasLocal
@@ -23,14 +25,18 @@ DST_B = pathlib.Path(__file__).parent / "data_b.json"
 # Columnas para cada archivo
 # (MUNICIPIO, LATITUD y LONGITUD se descartan — no se usan en el dashboard)
 COLS_A = ["GENERO", "EDAD", "COLONIA", "SECTOR", "NIVEL_EDUCATIVO",
-          "GRADO", "AÑO", "ETAPA", "TIPO_BECA", "IMPORTE"]
+          "GRADO", "AÑO", "ETAPA", "TIPO_BECA", "IMPORTE",
+          "NUM_BECAS", "AÑOS", "PERIODOS", "BECAS"]
 
 COLS_B = ["ESCUELA", "DELEGACION", "EDAD_TUTOR", "GENERO_TUTOR",
           "SECCION_ELECTORAL", "DISTRITO_FEDERAL", "DISTRITO_LOCAL"]
 
 # Campos numéricos: se convierten a int cuando el valor es entero (17.0 → 17)
-INT_FIELDS = {"EDAD", "GRADO", "AÑO", "IMPORTE", "EDAD_TUTOR",
+INT_FIELDS = {"EDAD", "GRADO", "AÑO", "IMPORTE", "NUM_BECAS", "EDAD_TUTOR",
               "SECCION_ELECTORAL", "DISTRITO_FEDERAL", "DISTRITO_LOCAL"}
+
+# Campos que son listas/objetos — se copian tal cual sin conversión numérica
+LIST_FIELDS = {"AÑOS", "PERIODOS", "BECAS"}
 
 
 def compact(rec: dict, cols: list) -> dict:
@@ -38,7 +44,10 @@ def compact(rec: dict, cols: list) -> dict:
     out = {}
     for k in cols:
         v = rec.get(k)
-        if k in INT_FIELDS and v is not None:
+        if k in LIST_FIELDS:
+            # Listas y objetos se copian sin modificar
+            out[k] = v if v is not None else []
+        elif k in INT_FIELDS and v is not None:
             try:
                 vi = int(v)
                 out[k] = vi if float(vi) == float(v) else v
