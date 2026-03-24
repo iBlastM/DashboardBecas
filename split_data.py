@@ -24,7 +24,7 @@ DST_B = pathlib.Path(__file__).parent / "data_b.json"
 
 # Columnas para cada archivo
 # (MUNICIPIO, LATITUD y LONGITUD se descartan — no se usan en el dashboard)
-COLS_A = ["GENERO", "EDAD", "COLONIA", "SECTOR", "NIVEL_EDUCATIVO",
+COLS_A = ["CURP", "GENERO", "EDAD", "COLONIA", "SECTOR", "NIVEL_EDUCATIVO",
           "GRADO", "AÑO", "ETAPA", "TIPO_BECA", "IMPORTE",
           "NUM_BECAS", "AÑOS", "PERIODOS", "BECAS"]
 

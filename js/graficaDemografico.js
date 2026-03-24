@@ -16,7 +16,9 @@ document.addEventListener('datosListos', () => {
     const elGen = document.getElementById('chart-genero');
     if (elGen) {
         elGen.classList.remove('loading');
-        const conteo = contarPor(data, 'GENERO');
+        const GENEROS_VALIDOS = /^(MUJ|HOM|MAS|FEM)/i;
+        const dataGen = data.filter(d => d.GENERO && GENEROS_VALIDOS.test(d.GENERO));
+        const conteo = contarPor(dataGen, 'GENERO');
         const labels = Object.keys(conteo);
         const values = Object.values(conteo);
         Plotly.newPlot(elGen, [{
@@ -25,7 +27,7 @@ document.addEventListener('datosListos', () => {
             labels,
             values,
             marker: {
-                colors: [C.naranja, C.verde, '#A855F7', '#EC4899'],
+                colors: ['#cb63e0', '#1dafe9'],
                 line: { color: C.paperBg, width: 2 },
             },
             textfont: { color: '#FFFFFF', size: 13, family: C.fuente },
@@ -237,6 +239,95 @@ document.addEventListener('datosListos', () => {
                 range: [0, maxPct * 1.5],
             },
             margin: { t: 58, r: 18, b: 58, l: 80 },
+        }), plotConfig);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 7. Top de puestos por número de becas (barras agrupadas por puntuación)
+    //    Cada barra = un valor único de NUM_BECAS (el "puesto")
+    //    El ancho de la barra = cantidad de beneficiarios en ese puesto
+    //    El tooltip lista todos los CURPs que comparten ese puesto
+    // ═══════════════════════════════════════════════════════════════════════
+    const elTopCurps = document.getElementById('chart-top-curps');
+    if (elTopCurps) {
+        elTopCurps.classList.remove('loading');
+
+        // Agrupar beneficiarios por NUM_BECAS
+        const grupos = {};
+        data.filter(d => d.CURP && d.NUM_BECAS > 0).forEach(d => {
+            const k = d.NUM_BECAS;
+            if (!grupos[k]) grupos[k] = [];
+            grupos[k].push(d.CURP);
+        });
+
+        // Ordenar por NUM_BECAS desc, tomar top 15 puestos únicos
+        const TOP_N = 15;
+        const puestos = Object.keys(grupos)
+            .map(Number)
+            .sort((a, b) => b - a)
+            .slice(0, TOP_N);
+
+        const MAX_CURPS_TOOLTIP = 30; // máx CURPs listados en el tooltip
+
+        // Construir arrays para la gráfica
+        const etiquetas = puestos.map((nb, i) => {
+            const n = grupos[nb].length;
+            return `#${i + 1} · ${nb} becas  (${n.toLocaleString('es-MX')} benef.)`;
+        });
+
+        const cantidades = puestos.map(nb => grupos[nb].length);
+
+        const maxPct = Math.max(...cantidades);
+
+        // Degradado de color: 1er puesto = naranja intenso → últimos = más fríos
+        const coloresTop = puestos.map((_, i) => {
+            const t = i / Math.max(puestos.length - 1, 1);
+            const r = Math.round(229 - t * (229 - 82));
+            const g = Math.round(134 + t * (188 - 134));
+            const b = Math.round(6   + t * (163 - 6));
+            return `rgb(${r},${g},${b})`;
+        });
+
+        // Tooltip: lista de CURPs (truncada si hay muchos)
+        const tooltips = puestos.map((nb, i) => {
+            const lista = grupos[nb];
+            const mostrar = lista.slice(0, MAX_CURPS_TOOLTIP);
+            const extras  = lista.length - mostrar.length;
+            return (
+                `<b>Puesto #${i + 1} · ${nb} becas</b><br>` +
+                `${lista.length.toLocaleString('es-MX')} beneficiarios<br>` +
+                `<br><b>CURPs:</b><br>` +
+                mostrar.join('<br>') +
+                (extras > 0 ? `<br><i>… y ${extras} más</i>` : '')
+            );
+        });
+
+        Plotly.newPlot(elTopCurps, [{
+            type: 'bar',
+            orientation: 'h',
+            x: cantidades,
+            y: etiquetas,
+            marker: {
+                color: coloresTop,
+                line: { color: 'rgba(255,255,255,0.15)', width: 1 },
+            },
+            text: cantidades.map(v => v.toLocaleString('es-MX')),
+            textposition: 'outside',
+            textfont: { color: '#FFF', size: 11 },
+            cliponaxis: false,
+            customdata: tooltips,
+            hovertemplate: '%{customdata}<extra></extra>',
+        }], getLayout('Top 15 Puestos · Número de Becas Otorgadas por Beneficiario', {
+            xaxis: {
+                title: 'Beneficiarios en el puesto',
+                gridcolor: 'rgba(255,255,255,0.08)',
+                range: [0, maxPct * 1.2],
+            },
+            yaxis: {
+                autorange: 'reversed',
+                tickfont: { size: 11 },
+            },
+            margin: { t: 58, r: 80, b: 58, l: 230 },
         }), plotConfig);
     }
 });

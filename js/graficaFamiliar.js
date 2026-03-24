@@ -24,7 +24,7 @@ document.addEventListener('datosListos', () => {
             labels: Object.keys(conteo),
             values: Object.values(conteo),
             marker: {
-                colors: ['#EC4899', C.verde, '#6B7280', C.naranja],
+                colors: ['#1dafe9','#cb63e0'],
                 line: { color: C.paperBg, width: 2 },
             },
             textfont: { color: '#FFFFFF', size: 13, family: C.fuente },

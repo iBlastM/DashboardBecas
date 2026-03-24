@@ -2,28 +2,28 @@
 // Tema, helpers de layout y utilidades de datos compartidas.
 
 const C = {
-    plotBg:  '#18122B',
-    paperBg: '#393053',
+    plotBg:  '#060606',
+    paperBg: '#0d0d0d',
 
-    naranja: 'rgb(229, 134, 6)',
-    verde:   'rgb(82, 188, 163)',
+    naranja: '#7bc11d',
+    verde:   '#3eb340',
 
     paleta: [
-        'rgb(229, 134, 6)',
-        'rgb(82, 188, 163)',
-        '#A855F7',
-        '#EC4899',
-        '#3B82F6',
-        '#10B981',
-        '#F59E0B',
-        '#6366F1',
-        '#14B8A6',
-        '#F97316',
-        '#8B5CF6',
-        '#EF4444',
+        '#7bc11d',
+        '#3eb340',
+        '#267e28',
+        '#a8e063',
+        '#56ab2f',
+        '#1de954',
+        '#4CAF50',
+        '#8BC34A',
+        '#CDDC39',
+        '#b5e853',
+        '#2ecc71',
+        '#27ae60',
     ],
 
-    fuente: "'Lato', 'Inter', sans-serif",
+    fuente: "'Barlow', 'Inter', sans-serif",
 };
 
 /** Layout base oscuro para Plotly. Mezcla extras si se pasan. */
@@ -41,21 +41,21 @@ function getLayout(titulo, extras) {
         font: { color: '#FFFFFF', family: C.fuente, size: 12 },
         margin: { t: 58, r: 18, b: 48, l: 18 },
         xaxis: {
-            gridcolor:     'rgba(255,255,255,0.08)',
-            linecolor:     'rgba(255,255,255,0.22)',
-            zerolinecolor: 'rgba(255,255,255,0.12)',
+            gridcolor:     'rgba(123,193,29,0.10)',
+            linecolor:     'rgba(123,193,29,0.25)',
+            zerolinecolor: 'rgba(123,193,29,0.18)',
             tickcolor:     'rgba(255,255,255,0.6)',
         },
         yaxis: {
-            gridcolor:     'rgba(255,255,255,0.08)',
-            linecolor:     'rgba(255,255,255,0.22)',
-            zerolinecolor: 'rgba(255,255,255,0.12)',
+            gridcolor:     'rgba(123,193,29,0.10)',
+            linecolor:     'rgba(123,193,29,0.25)',
+            zerolinecolor: 'rgba(123,193,29,0.18)',
             tickcolor:     'rgba(255,255,255,0.6)',
         },
         legend: {
             font:        { color: '#FFFFFF', size: 11 },
-            bgcolor:     'rgba(0,0,0,0.22)',
-            bordercolor: 'rgba(255,255,255,0.14)',
+            bgcolor:     'rgba(0,0,0,0.45)',
+            bordercolor: 'rgba(123,193,29,0.20)',
             borderwidth: 1,
         },
     };

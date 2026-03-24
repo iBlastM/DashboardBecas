@@ -1,6 +1,6 @@
 /* ── STYLES.CSS ── DashboardBecas ─────────────────────────────────────────────
-   Tema oscuro: inspirado en plantilla1.py (#18122B / #393053) y
-   plantilla2.py (#1A1A1D / #3B1C32)
+   Tema: Metrix brand — negro (#060606) · verde (#7bc11d / #267e28)
+   Fuentes: Exo 2 (display) · Barlow (cuerpo)
    Dashboard: Becas Académicas 2021–2025 · Gobierno de Querétaro
 ── */
 
@@ -11,20 +11,20 @@
 }
 
 :root {
-    --bg-base:       #0E0A1E;
-    --bg-card:       #18122B;
-    --bg-paper:      #393053;
-    --accent-1:      rgb(229, 134, 6);
-    --accent-2:      rgb(82, 188, 163);
+    --bg-base:       #060606;
+    --bg-card:       #0d0d0d;
+    --bg-paper:      #161616;
+    --accent-1:      #7bc11d;
+    --accent-2:      #3eb340;
     --text-primary:  #FFFFFF;
     --text-muted:    rgba(255, 255, 255, 0.55);
-    --border:        rgba(255, 255, 255, 0.10);
-    --border-hover:  rgba(255, 255, 255, 0.22);
-    --font-main:     'Lato', 'Inter', sans-serif;
-    --font-display:  'Oswald', sans-serif;
+    --border:        rgba(123, 193, 29, 0.15);
+    --border-hover:  rgba(123, 193, 29, 0.35);
+    --font-main:     'Barlow', 'Inter', sans-serif;
+    --font-display:  'Exo 2', sans-serif;
     --radius:        10px;
-    --shadow:        0 4px 20px rgba(0, 0, 0, 0.45);
-    --shadow-hover:  0 8px 32px rgba(0, 0, 0, 0.6);
+    --shadow:        0 4px 20px rgba(0, 0, 0, 0.55);
+    --shadow-hover:  0 8px 32px rgba(0, 0, 0, 0.7);
     --h-topbar:      62px;
     --h-filtros:     86px;
 }
@@ -41,7 +41,7 @@ body {
 
 /* ── TOP BAR ─────────────────────────────────────────────────────────────── */
 .top-bar {
-    background: linear-gradient(135deg, #1A0E3A 0%, #393053 70%, #2D1B5C 100%);
+    background: linear-gradient(135deg, #000000 0%, #0a1300 70%, #061000 100%);
     border-bottom: 2px solid var(--accent-1);
     position: sticky;
     top: 0;
@@ -123,7 +123,7 @@ body {
 }
 
 .kpi-card {
-    background: linear-gradient(145deg, #1A0E3A, var(--bg-card));
+    background: linear-gradient(145deg, #0d0d0d, var(--bg-card));
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 1.2rem 1.5rem;
@@ -153,10 +153,13 @@ body {
 
 .kpi-value {
     font-family: var(--font-display);
-    font-size: 1.6rem;
+    font-size: clamp(1.05rem, 2vw, 1.6rem);
     font-weight: 700;
     color: var(--text-primary);
-    line-height: 1.1;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
 }
 
 /* ── CHARTS GRID ──────────────────────────────────────────────────────────── */
@@ -222,7 +225,7 @@ body {
 
 /* ── TABS NAV ─────────────────────────────────────────────────────────────── */
 .tabs-nav {
-    background: linear-gradient(135deg, #0e0a1e 0%, #1a0e3a 100%);
+    background: linear-gradient(135deg, #000000 0%, #0a1300 100%);
     border-bottom: 2px solid var(--border);
     position: sticky;
     top: calc(var(--h-topbar) + var(--h-filtros));
@@ -268,7 +271,7 @@ body {
 
 /* ── BARRA DE FILTROS ────────────────────────────────────────────────────── */
 .filtros-bar {
-    background: linear-gradient(135deg, #12092a 0%, #22183f 100%);
+    background: linear-gradient(135deg, #060606 0%, #0d1500 100%);
     border-bottom: 1px solid var(--border);
     padding: 0.65rem 2rem;
     position: sticky;
@@ -328,12 +331,12 @@ body {
 .filtro-select:hover,
 .filtro-select:focus {
     border-color: var(--accent-1);
-    background: rgba(229,134,6,0.10);
+    background: rgba(123,193,29,0.10);
     outline: none;
 }
 
 .filtro-select option {
-    background: #18122B;
+    background: #0d0d0d;
     color: var(--text-primary);
 }
 
@@ -370,7 +373,7 @@ body {
 }
 
 .placeholder-card {
-    background: linear-gradient(145deg, rgba(57,48,83,0.35), rgba(24,18,43,0.6));
+    background: linear-gradient(145deg, rgba(26,26,26,0.35), rgba(13,13,13,0.6));
     border: 1px dashed rgba(255,255,255,0.18);
     border-radius: var(--radius);
     padding: 2rem 2.5rem;
@@ -431,6 +434,31 @@ body {
     font-size: 0.72rem;
     color: rgba(255,255,255,0.18);
     font-family: var(--font-main);
+}
+
+/* ── BRAND LOGO ─────────────────────────────────────────────────────────── */
+.brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-shrink: 0;
+    text-decoration: none;
+}
+
+.brand-img {
+    height: 54px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+    border-radius: 4px;
+}
+
+.brand-divider {
+    width: 1px;
+    height: 30px;
+    background: rgba(123, 193, 29, 0.25);
+    margin: 0 0.4rem;
+    flex-shrink: 0;
 }
 
 /* ── FOOTER ──────────────────────────────────────────────────────────────── */
