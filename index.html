@@ -24,6 +24,10 @@
         <div class="brand-divider"></div>
         <h1 class="dashboard-title">Becas Académicas 2021-2025</h1>
         <span class="dashboard-subtitle">Panel de Indicadores · Gobierno de Querétaro</span>
+        <nav class="page-nav" aria-label="Cambiar vista">
+            <a href="solicitantes.html" class="page-nav-btn">Solicitantes</a>
+            <a href="index.html" class="page-nav-btn active">Beneficiarios</a>
+        </nav>
     </div>
 </header>
 
@@ -40,62 +44,73 @@
         <span class="filtros-titulo">Filtrar por</span>
 
         <div class="filtro-grupo">
-            <label class="filtro-label" for="filtro-nivel">Nivel Educativo</label>
-            <select id="filtro-nivel" class="filtro-select">
-                <option value="">Todos</option>
-                <option value="PRIMARIA">Primaria</option>
-                <option value="SECUNDARIA">Secundaria</option>
-                <option value="UNIVERSIDAD">Universidad</option>
-            </select>
+            <label class="filtro-label">Nivel Educativo</label>
+            <div class="ms-wrap" id="ms-nivel">
+                <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel" hidden>
+                    <label class="ms-opt"><input type="checkbox" value="PRIMARIA"> Primaria</label>
+                    <label class="ms-opt"><input type="checkbox" value="SECUNDARIA"> Secundaria</label>
+                    <label class="ms-opt"><input type="checkbox" value="UNIVERSIDAD"> Universidad</label>
+                </div>
+            </div>
         </div>
 
         <div class="filtro-grupo">
-            <label class="filtro-label" for="filtro-sector">Sector</label>
-            <select id="filtro-sector" class="filtro-select">
-                <option value="">Todos</option>
-                <option value="PUBLICA">Público</option>
-                <option value="PRIVADA">Privado</option>
-            </select>
+            <label class="filtro-label">Sector</label>
+            <div class="ms-wrap" id="ms-sector">
+                <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel" hidden>
+                    <label class="ms-opt"><input type="checkbox" value="PUBLICA"> Público</label>
+                    <label class="ms-opt"><input type="checkbox" value="PRIVADA"> Privado</label>
+                </div>
+            </div>
         </div>
 
         <div class="filtro-grupo">
-            <label class="filtro-label" for="filtro-anio">Año</label>
-            <select id="filtro-anio" class="filtro-select">
-                <option value="">Todos</option>
-                <option value="2021">2021</option>
-                <option value="2022">2022</option>
-                <option value="2023">2023</option>
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
-            </select>
+            <label class="filtro-label">Año</label>
+            <div class="ms-wrap" id="ms-anio">
+                <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel" hidden>
+                    <label class="ms-opt"><input type="checkbox" value="2021"> 2021</label>
+                    <label class="ms-opt"><input type="checkbox" value="2022"> 2022</label>
+                    <label class="ms-opt"><input type="checkbox" value="2023"> 2023</label>
+                    <label class="ms-opt"><input type="checkbox" value="2024"> 2024</label>
+                    <label class="ms-opt"><input type="checkbox" value="2025"> 2025</label>
+                </div>
+            </div>
         </div>
 
         <div class="filtro-grupo">
-            <label class="filtro-label" for="filtro-etapa">Etapa</label>
-            <select id="filtro-etapa" class="filtro-select">
-                <option value="">Todas</option>
-                <option value="1RA ETAPA">1ª Etapa</option>
-                <option value="2DA ETAPA">2ª Etapa</option>
-                <option value="EXTRAORDINARIA">Extraordinaria</option>
-            </select>
+            <label class="filtro-label">Etapa</label>
+            <div class="ms-wrap" id="ms-etapa">
+                <button class="ms-btn" type="button"><span class="ms-text">Todas</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel" hidden>
+                    <label class="ms-opt" data-etapa="E1"><input type="checkbox" value="1RA ETAPA"> 1ª Etapa</label>
+                    <label class="ms-opt" data-etapa="E2"><input type="checkbox" value="2DA ETAPA"> 2ª Etapa</label>
+                    <label class="ms-opt" data-etapa="EX"><input type="checkbox" value="EXTRAORDINARIA"> Extraordinaria</label>
+                </div>
+            </div>
         </div>
 
         <div class="filtro-grupo">
-            <label class="filtro-label" for="filtro-tipo">Tipo de Beca</label>
-            <select id="filtro-tipo" class="filtro-select">
-                <option value="">Todos</option>
-                <option value="PRIMARIA">Primaria</option>
-                <option value="SECUNDARIA">Secundaria</option>
-                <option value="PRIMARIA EXCELENCIA">Primaria Excelencia</option>
-                <option value="SECUNDARIA EXCELENCIA">Secundaria Excelencia</option>
-            </select>
+            <label class="filtro-label">Tipo de Beca</label>
+            <div class="ms-wrap" id="ms-tipo">
+                <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel" hidden>
+                    <label class="ms-opt"><input type="checkbox" value="PRIMARIA"> Primaria</label>
+                    <label class="ms-opt"><input type="checkbox" value="SECUNDARIA"> Secundaria</label>
+                    <label class="ms-opt"><input type="checkbox" value="PRIMARIA EXCELENCIA"> Primaria Excelencia</label>
+                    <label class="ms-opt"><input type="checkbox" value="SECUNDARIA EXCELENCIA"> Secundaria Excelencia</label>
+                </div>
+            </div>
         </div>
 
         <div class="filtro-grupo">
-            <label class="filtro-label" for="filtro-escuela">Escuela</label>
-            <select id="filtro-escuela" class="filtro-select filtro-select-lg">
-                <option value="">Todas</option>
-            </select>
+            <label class="filtro-label">Escuela</label>
+            <div class="ms-wrap ms-wrap-lg" id="ms-escuela">
+                <button class="ms-btn" type="button"><span class="ms-text">Todas</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel ms-panel-scroll" hidden></div>
+            </div>
         </div>
 
         <button id="filtro-limpiar" class="filtro-btn-limpiar">Limpiar</button>

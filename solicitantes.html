@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitantes — Becas Académicas 2021-2025</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;600;700&family=Exo+2:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/styles.css">
+
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+</head>
+<body>
+
+<!-- ── TOP BAR ──────────────────────────────────────────────────────────── -->
+<header class="top-bar">
+    <div class="top-bar-inner">
+        <div class="brand-logo" aria-label="Metrix">
+            <img src="images/logo.png" alt="Metrix" class="brand-img">
+        </div>
+        <div class="brand-divider"></div>
+        <h1 class="dashboard-title">Becas Académicas 2021-2025</h1>
+        <span class="dashboard-subtitle">Solicitantes · Gobierno de Querétaro</span>
+        <nav class="page-nav" aria-label="Cambiar vista">
+            <a href="solicitantes.html" class="page-nav-btn active">Solicitantes</a>
+            <a href="index.html" class="page-nav-btn">Beneficiarios</a>
+        </nav>
+    </div>
+</header>
+
+<!-- ── BANNER DE ERROR ──────────────────────────────────────────────────── -->
+<div id="error-msg" class="error-banner" style="display:none;">
+    No se pudo cargar <code>data_sol_a.json</code> / <code>data_sol_b.json</code>.
+    Ejecuta primero <code>python preprocesar_solicitantes.py</code> y luego
+    <code>python split_solicitantes.py</code>, y sirve el dashboard desde un
+    servidor local: <code>python -m http.server 8080</code> en la carpeta <code>DashboardBecasLocal</code>.
+</div>
+
+<!-- ── BARRA DE FILTROS ──────────────────────────────────────── -->
+<div class="filtros-bar">
+    <div class="filtros-inner">
+        <span class="filtros-titulo">Filtrar por</span>
+
+        <!-- Filtro exclusivo de Solicitantes: Registro -->
+        <div class="filtro-grupo">
+            <label class="filtro-label">Registro</label>
+            <div class="ms-wrap" id="ms-registro">
+                <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel" hidden>
+                    <label class="ms-opt"><input type="checkbox" value="BENEFICIARIOS"> Beneficiarios</label>
+                    <label class="ms-opt"><input type="checkbox" value="NO_BENEFICIARIOS"> No Beneficiarios</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtro exclusivo de Solicitantes: Estatus -->
+        <div class="filtro-grupo">
+            <label class="filtro-label">Estatus</label>
+            <div class="ms-wrap ms-wrap-lg" id="ms-estatus">
+                <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel ms-panel-scroll" hidden></div>
+            </div>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">Nivel Educativo</label>
+            <div class="ms-wrap" id="ms-nivel">
+                <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel" hidden>
+                    <label class="ms-opt"><input type="checkbox" value="PRIMARIA"> Primaria</label>
+                    <label class="ms-opt"><input type="checkbox" value="SECUNDARIA"> Secundaria</label>
+                    <label class="ms-opt"><input type="checkbox" value="UNIVERSIDAD"> Universidad</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">Sector</label>
+            <div class="ms-wrap" id="ms-sector">
+                <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel" hidden>
+                    <label class="ms-opt"><input type="checkbox" value="PUBLICA"> Público</label>
+                    <label class="ms-opt"><input type="checkbox" value="PRIVADA"> Privado</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">Año</label>
+            <div class="ms-wrap" id="ms-anio">
+                <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel" hidden>
+                    <label class="ms-opt"><input type="checkbox" value="2021"> 2021</label>
+                    <label class="ms-opt"><input type="checkbox" value="2022"> 2022</label>
+                    <label class="ms-opt"><input type="checkbox" value="2023"> 2023</label>
+                    <label class="ms-opt"><input type="checkbox" value="2024"> 2024</label>
+                    <label class="ms-opt"><input type="checkbox" value="2025"> 2025</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">Etapa</label>
+            <div class="ms-wrap" id="ms-etapa">
+                <button class="ms-btn" type="button"><span class="ms-text">Todas</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel" hidden>
+                    <label class="ms-opt" data-etapa="E1"><input type="checkbox" value="1RA ETAPA"> 1ª Etapa</label>
+                    <label class="ms-opt" data-etapa="E2"><input type="checkbox" value="2DA ETAPA"> 2ª Etapa</label>
+                    <label class="ms-opt" data-etapa="EX"><input type="checkbox" value="EXTRAORDINARIA"> Extraordinaria</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">Tipo de Beca</label>
+            <div class="ms-wrap" id="ms-tipo">
+                <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel" hidden>
+                    <label class="ms-opt"><input type="checkbox" value="PRIMARIA"> Primaria</label>
+                    <label class="ms-opt"><input type="checkbox" value="SECUNDARIA"> Secundaria</label>
+                    <label class="ms-opt"><input type="checkbox" value="PRIMARIA EXCELENCIA"> Primaria Excelencia</label>
+                    <label class="ms-opt"><input type="checkbox" value="SECUNDARIA EXCELENCIA"> Secundaria Excelencia</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">Escuela</label>
+            <div class="ms-wrap ms-wrap-lg" id="ms-escuela">
+                <button class="ms-btn" type="button"><span class="ms-text">Todas</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel ms-panel-scroll" hidden></div>
+            </div>
+        </div>
+
+        <button id="filtro-limpiar" class="filtro-btn-limpiar">Limpiar</button>
+        <span id="filtro-count" class="filtro-count"></span>
+    </div>
+</div>
+
+<!-- ── KPI CARDS ─────────────────────────────────────────────────────────── -->
+<div class="container kpi-wrapper">
+    <section class="section">
+        <h2 class="section-title">Indicadores Globales</h2>
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <span class="kpi-label">Total Solicitantes</span>
+                <span class="kpi-value" id="kpi-total-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Total Beneficiarios</span>
+                <span class="kpi-value" id="kpi-beneficiarios-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Tasa de Aprobación</span>
+                <span class="kpi-value" id="kpi-tasa-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Inversión Total</span>
+                <span class="kpi-value" id="kpi-inversion-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Importe Promedio</span>
+                <span class="kpi-value" id="kpi-promedio-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Edad Promedio</span>
+                <span class="kpi-value" id="kpi-edad-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Sector Público</span>
+                <span class="kpi-value" id="kpi-publico-val">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Sector Privado</span>
+                <span class="kpi-value" id="kpi-privado-val">—</span>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- ── NAVEGACIÓN POR PESTAÑAS ───────────────────────────────────────────── -->
+<nav id="tabs-nav" class="tabs-nav" aria-label="Secciones del dashboard"></nav>
+
+<!-- ── PANELES DE CONTENIDO ──────────────────────────────────────────────── -->
+<main id="tab-panels" class="container"></main>
+
+<!-- ── FOOTER ────────────────────────────────────────────────────────────── -->
+<footer class="footer">
+    <span>Becas Académicas 2021–2025 · Solicitantes · Gobierno de Querétaro</span>
+    <span>Fuente: base_limpia.json · Procesado con preprocesar_solicitantes.py</span>
+</footer>
+
+<!-- ── SCRIPTS ────────────────────────────────────────────────────────────
+     Orden: config → cargarDatosSol → módulos de gráficas
+     cargarDatosSol.js dispara el evento 'datosListos' que activa cada gráfica.
+─────────────────────────────────────────────────────────────────────────── -->
+<script src="js/config.js"></script>
+<script src="js/cargarDatosSol.js"></script>
+<script src="js/filtrosSol.js"></script>
+<script src="js/tabs.js"></script>
+<script src="js/tabsSol.js"></script>
+
+<!-- KPI cards -->
+<script src="js/kpisSol.js"></script>
+
+<!-- Gráficas por sección -->
+<!-- Demográfico: compartido + gráfica extra exclusiva de Solicitantes -->
+<script src="js/graficaDemografico.js"></script>
+<script src="js/graficaDemograficoSol.js"></script>
+<!-- Familiar y Académico: compartidos -->
+<script src="js/graficaFamiliar.js"></script>
+<script src="js/graficaAcademico.js"></script>
+<!-- Aprobación: versión Solicitantes (reemplaza Económico de Beneficiarios) -->
+<script src="js/graficaEconomicoSol.js"></script>
+<!-- Territorial y Electoral: compartidos -->
+<script src="js/graficaTerritorial.js"></script>
+<script src="js/graficaElectoral.js"></script>
+<!-- Temporal: versión Solicitantes (reemplaza Comparativo de Beneficiarios) -->
+<script src="js/graficaComparativoSol.js"></script>
+
+<!-- Orquestador: carga partials y arranca datos -->
+<script src="js/loaderSol.js"></script>
+
+</body>
+</html>

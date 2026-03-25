@@ -356,6 +356,94 @@ body {
 
 .filtro-btn-limpiar:hover { border-color: #ef4444; color: #fca5a5; }
 
+/* ── MULTI-SELECT DROPDOWN ───────────────────────────────────────────────── */
+.ms-wrap {
+    position: relative;
+    min-width: 126px;
+}
+.ms-wrap-lg { min-width: 200px; }
+
+.ms-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    font-size: 0.83rem;
+    padding: 0.28rem 0.7rem;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease;
+    white-space: nowrap;
+}
+.ms-btn:hover,
+.ms-btn:focus,
+.ms-wrap.open .ms-btn {
+    border-color: var(--accent-1);
+    background: rgba(123,193,29,0.10);
+    outline: none;
+}
+.ms-arrow {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    transition: transform 0.18s ease;
+    flex-shrink: 0;
+}
+.ms-wrap.open .ms-arrow { transform: rotate(180deg); }
+
+.ms-panel {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 200;
+    background: #141414;
+    border: 1px solid var(--border-hover);
+    border-radius: 8px;
+    padding: 0.35rem 0;
+    min-width: 100%;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.7);
+}
+.ms-panel[hidden] { display: none; }
+
+.ms-panel-scroll {
+    max-height: 220px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-1) transparent;
+}
+
+.ms-opt {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.32rem 0.85rem;
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s ease;
+    user-select: none;
+}
+.ms-opt:hover { background: rgba(123,193,29,0.12); }
+
+.ms-opt input[type="checkbox"] {
+    accent-color: var(--accent-1);
+    width: 13px;
+    height: 13px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Opción deshabilitada (ej. etapas no disponibles en año seleccionado) */
+.ms-opt.ms-disabled {
+    opacity: 0.32;
+    pointer-events: none;
+}
+
 .filtro-count {
     align-self: flex-end;
     font-size: 0.75rem;
@@ -459,6 +547,46 @@ body {
     background: rgba(123, 193, 29, 0.25);
     margin: 0 0.4rem;
     flex-shrink: 0;
+}
+
+/* ── PAGE NAV (switch between Solicitantes / Beneficiarios) ──────────────── */
+.page-nav {
+    display: flex;
+    gap: 0.4rem;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.page-nav-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-family: var(--font-main);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    padding: 0.32rem 0.85rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+}
+
+.page-nav-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+    background: rgba(123, 193, 29, 0.08);
+}
+
+.page-nav-btn.active {
+    border-color: var(--accent-1);
+    color: var(--accent-1);
+    background: rgba(123, 193, 29, 0.08);
+    cursor: default;
 }
 
 /* ── FOOTER ──────────────────────────────────────────────────────────────── */
