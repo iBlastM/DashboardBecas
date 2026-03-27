@@ -176,60 +176,78 @@ document.addEventListener('datosListos', () => {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 5. Top 10 Escuelas por Inversión Total
+    // 5. Top Escuelas por Inversión Total
     // ═══════════════════════════════════════════════════════════════════════
     const elTE = document.getElementById('chart-top10-escuelas-invest');
     if (elTE) {
         elTE.classList.remove('loading');
-        const sumas   = sumarPor(data.filter(d => d.ESCUELA), 'ESCUELA', 'IMPORTE');
-        const ranking = sortedDesc(sumas).slice(0, 10);
-        const labels  = ranking.map(r => r[0]);
-        const vals    = ranking.map(r => r[1]);
+        const sumasE   = sumarPor(data.filter(d => d.ESCUELA), 'ESCUELA', 'IMPORTE');
+        const fullRankE = sortedDesc(sumasE);
 
-        Plotly.newPlot(elTE, [{
-            type: 'bar',
-            orientation: 'h',
-            x: vals,
-            y: labels,
-            marker: { color: C.naranja },
-            text: vals.map(v => '$' + fmt(v, { maximumFractionDigits: 0 })),
-            textposition: 'outside',
-            textfont: { color: '#FFF', size: 10 },
-            cliponaxis: false,
-            hovertemplate: '<b>%{y}</b><br>$%{x:,.0f}<extra></extra>',
-        }], getLayout('Top 10 Escuelas por Inversión', {
-            xaxis: { title: 'Inversión Total ($)', tickformat: '$,.0f' },
-            yaxis: { autorange: 'reversed' },
-            margin: { t: 58, r: 100, b: 58, l: 340 },
-        }), plotConfig);
+        const renderTopEscInvest = (n) => {
+            const ranking = fullRankE.slice(0, n);
+            const labels  = ranking.map(r => r[0]);
+            const vals    = ranking.map(r => r[1]);
+
+            Plotly.newPlot(elTE, [{
+                type: 'bar',
+                orientation: 'h',
+                x: vals,
+                y: labels,
+                marker: { color: C.naranja },
+                text: vals.map(v => '$' + fmt(v, { maximumFractionDigits: 0 })),
+                textposition: 'outside',
+                textfont: { color: '#FFF', size: 10 },
+                cliponaxis: false,
+                hovertemplate: '<b>%{y}</b><br>$%{x:,.0f}<extra></extra>',
+            }], getLayout(`Top ${n} Escuelas por Inversión`, {
+                xaxis: { title: 'Inversión Total ($)', tickformat: '$,.0f' },
+                yaxis: { autorange: 'reversed' },
+                margin: { t: 58, r: 100, b: 58, l: 340 },
+            }), plotConfig);
+        };
+
+        elTE._renderTop = renderTopEscInvest;
+        const selTE = document.querySelector('[data-chart="chart-top10-escuelas-invest"]');
+        const nTE   = +(selTE?.querySelector('.top-btn.active')?.dataset.n ?? 10);
+        renderTopEscInvest(nTE);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 6. Top 10 Colonias por Inversión Total
+    // 6. Top Colonias por Inversión Total
     // ═══════════════════════════════════════════════════════════════════════
     const elTC = document.getElementById('chart-top10-colonias-invest');
     if (elTC) {
         elTC.classList.remove('loading');
-        const sumas   = sumarPor(data.filter(d => d.COLONIA), 'COLONIA', 'IMPORTE');
-        const ranking = sortedDesc(sumas).slice(0, 10);
-        const labels  = ranking.map(r => r[0]);
-        const vals    = ranking.map(r => r[1]);
+        const sumasC    = sumarPor(data.filter(d => d.COLONIA), 'COLONIA', 'IMPORTE');
+        const fullRankC = sortedDesc(sumasC);
 
-        Plotly.newPlot(elTC, [{
-            type: 'bar',
-            orientation: 'h',
-            x: vals,
-            y: labels,
-            marker: { color: C.verde },
-            text: vals.map(v => '$' + fmt(v, { maximumFractionDigits: 0 })),
-            textposition: 'outside',
-            textfont: { color: '#FFF', size: 10 },
-            cliponaxis: false,
-            hovertemplate: '<b>%{y}</b><br>$%{x:,.0f}<extra></extra>',
-        }], getLayout('Top 10 Colonias por Inversión', {
-            xaxis: { title: 'Inversión Total ($)', tickformat: '$,.0f' },
-            yaxis: { autorange: 'reversed' },
-            margin: { t: 58, r: 100, b: 58, l: 240 },
-        }), plotConfig);
+        const renderTopColInvest = (n) => {
+            const ranking = fullRankC.slice(0, n);
+            const labels  = ranking.map(r => r[0]);
+            const vals    = ranking.map(r => r[1]);
+
+            Plotly.newPlot(elTC, [{
+                type: 'bar',
+                orientation: 'h',
+                x: vals,
+                y: labels,
+                marker: { color: C.verde },
+                text: vals.map(v => '$' + fmt(v, { maximumFractionDigits: 0 })),
+                textposition: 'outside',
+                textfont: { color: '#FFF', size: 10 },
+                cliponaxis: false,
+                hovertemplate: '<b>%{y}</b><br>$%{x:,.0f}<extra></extra>',
+            }], getLayout(`Top ${n} Colonias por Inversión`, {
+                xaxis: { title: 'Inversión Total ($)', tickformat: '$,.0f' },
+                yaxis: { autorange: 'reversed' },
+                margin: { t: 58, r: 100, b: 58, l: 240 },
+            }), plotConfig);
+        };
+
+        elTC._renderTop = renderTopColInvest;
+        const selTC = document.querySelector('[data-chart="chart-top10-colonias-invest"]');
+        const nTC   = +(selTC?.querySelector('.top-btn.active')?.dataset.n ?? 10);
+        renderTopColInvest(nTC);
     }
 });

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solicitantes — Becas Académicas 2021-2025</title>
+    <title>Solicitantes — 2021-2025</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="css/styles.css">
 
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+    <!-- Carga el tema antes del primer paint para evitar flash -->
+    <script src="js/theme.js"></script>
 </head>
 <body>
 
@@ -22,27 +24,24 @@
             <img src="images/logo.png" alt="Metrix" class="brand-img">
         </div>
         <div class="brand-divider"></div>
-        <h1 class="dashboard-title">Becas Académicas 2021-2025</h1>
-        <span class="dashboard-subtitle">Solicitantes · Gobierno de Querétaro</span>
+        <h1 class="dashboard-title">Becas 2021-2025</h1>
         <nav class="page-nav" aria-label="Cambiar vista">
             <a href="solicitantes.html" class="page-nav-btn active">Solicitantes</a>
             <a href="index.html" class="page-nav-btn">Beneficiarios</a>
         </nav>
+        <button id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar a modo claro">☀</button>
     </div>
 </header>
 
 <!-- ── BANNER DE ERROR ──────────────────────────────────────────────────── -->
 <div id="error-msg" class="error-banner" style="display:none;">
     No se pudo cargar <code>data_sol_a.json</code> / <code>data_sol_b.json</code>.
-    Ejecuta primero <code>python preprocesar_solicitantes.py</code> y luego
-    <code>python split_solicitantes.py</code>, y sirve el dashboard desde un
-    servidor local: <code>python -m http.server 8080</code> en la carpeta <code>DashboardBecasLocal</code>.
+    Ejecuta primero <code>python preprocesar_solicitantes.py</code>.
 </div>
 
 <!-- ── BARRA DE FILTROS ──────────────────────────────────────── -->
 <div class="filtros-bar">
     <div class="filtros-inner">
-        <span class="filtros-titulo">Filtrar por</span>
 
         <!-- Filtro exclusivo de Solicitantes: Registro -->
         <div class="filtro-grupo">
@@ -65,13 +64,15 @@
             </div>
         </div>
 
-        <div class="filtro-grupo">
-            <label class="filtro-label">Nivel Educativo</label>
-            <div class="ms-wrap" id="ms-nivel">
+         <div class="filtro-grupo">
+            <label class="filtro-label">Tipo de Beca</label>
+            <div class="ms-wrap" id="ms-tipo">
                 <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
                 <div class="ms-panel" hidden>
                     <label class="ms-opt"><input type="checkbox" value="PRIMARIA"> Primaria</label>
                     <label class="ms-opt"><input type="checkbox" value="SECUNDARIA"> Secundaria</label>
+                    <label class="ms-opt"><input type="checkbox" value="PRIMARIA EXCELENCIA"> Primaria Excelencia</label>
+                    <label class="ms-opt"><input type="checkbox" value="SECUNDARIA EXCELENCIA"> Secundaria Excelencia</label>
                     <label class="ms-opt"><input type="checkbox" value="UNIVERSIDAD"> Universidad</label>
                 </div>
             </div>
@@ -115,15 +116,10 @@
         </div>
 
         <div class="filtro-grupo">
-            <label class="filtro-label">Tipo de Beca</label>
-            <div class="ms-wrap" id="ms-tipo">
+            <label class="filtro-label">Municipio</label>
+            <div class="ms-wrap ms-wrap-lg" id="ms-municipio">
                 <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
-                <div class="ms-panel" hidden>
-                    <label class="ms-opt"><input type="checkbox" value="PRIMARIA"> Primaria</label>
-                    <label class="ms-opt"><input type="checkbox" value="SECUNDARIA"> Secundaria</label>
-                    <label class="ms-opt"><input type="checkbox" value="PRIMARIA EXCELENCIA"> Primaria Excelencia</label>
-                    <label class="ms-opt"><input type="checkbox" value="SECUNDARIA EXCELENCIA"> Secundaria Excelencia</label>
-                </div>
+                <div class="ms-panel ms-panel-scroll" hidden></div>
             </div>
         </div>
 
@@ -131,14 +127,21 @@
             <label class="filtro-label">Escuela</label>
             <div class="ms-wrap ms-wrap-lg" id="ms-escuela">
                 <button class="ms-btn" type="button"><span class="ms-text">Todas</span><span class="ms-arrow">▾</span></button>
-                <div class="ms-panel ms-panel-scroll" hidden></div>
+                <div class="ms-panel ms-panel-scroll" hidden>
+                    <div class="ms-search-wrap">
+                        <input type="text" id="escuela-search" class="ms-search" placeholder="Buscar escuela…" autocomplete="off">
+                    </div>
+                    <div class="ms-checkboxes"></div>
+                </div>
             </div>
         </div>
 
         <button id="filtro-limpiar" class="filtro-btn-limpiar">Limpiar</button>
-        <span id="filtro-count" class="filtro-count"></span>
     </div>
 </div>
+
+<!-- ── NAVEGACIÓN POR PESTAÑAS ───────────────────────────────────────────── -->
+<nav id="tabs-nav" class="tabs-nav" aria-label="Secciones del dashboard"></nav>
 
 <!-- ── KPI CARDS ─────────────────────────────────────────────────────────── -->
 <div class="container kpi-wrapper">
@@ -181,15 +184,12 @@
     </section>
 </div>
 
-<!-- ── NAVEGACIÓN POR PESTAÑAS ───────────────────────────────────────────── -->
-<nav id="tabs-nav" class="tabs-nav" aria-label="Secciones del dashboard"></nav>
-
 <!-- ── PANELES DE CONTENIDO ──────────────────────────────────────────────── -->
 <main id="tab-panels" class="container"></main>
 
 <!-- ── FOOTER ────────────────────────────────────────────────────────────── -->
 <footer class="footer">
-    <span>Becas Académicas 2021–2025 · Solicitantes · Gobierno de Querétaro</span>
+    <span>Becas Académicas 2021-2025 · Solicitantes · Gobierno de Querétaro</span>
     <span>Fuente: base_limpia.json · Procesado con preprocesar_solicitantes.py</span>
 </footer>
 

@@ -132,12 +132,51 @@
         }
     }
 
+    // ── Poblar dropdown de municipios ─────────────────────────────────────────
+    function poblarMunicipios(data) {
+        const panel = document.querySelector('#ms-municipio .ms-panel');
+        if (!panel) return;
+        const municipios = [...new Set(data.map(d => d.MUNICIPIO))].filter(Boolean).sort();
+        panel.innerHTML = '';
+        municipios.forEach(m => {
+            const lbl = document.createElement('label');
+            lbl.className = 'ms-opt';
+            const cb = document.createElement('input');
+            cb.type  = 'checkbox';
+            cb.value = m;
+            lbl.appendChild(cb);
+            lbl.append(' ' + m.charAt(0).toUpperCase() + m.slice(1).toLowerCase());
+            panel.appendChild(lbl);
+        });
+        panel.addEventListener('change', () => {
+            updateTrigger('ms-municipio', 'Todos');
+            scheduleAplicar();
+        });
+
+        const wrap = document.getElementById('ms-municipio');
+        const btn  = wrap?.querySelector('.ms-btn');
+        if (wrap && btn) {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = wrap.classList.contains('open');
+                document.querySelectorAll('.ms-wrap.open').forEach(w => {
+                    w.classList.remove('open');
+                    w.querySelector('.ms-panel')?.setAttribute('hidden', '');
+                });
+                if (!isOpen) {
+                    wrap.classList.add('open');
+                    panel.removeAttribute('hidden');
+                }
+            });
+        }
+    }
+
     // ── Poblar dropdown de escuelas (dinámico) ───────────────────────────────
     function poblarEscuelas(data) {
-        const panel = document.querySelector('#ms-escuela .ms-panel');
-        if (!panel) return;
+        const checkboxes = document.querySelector('#ms-escuela .ms-checkboxes');
+        if (!checkboxes) return;
         const escuelas = [...new Set(data.map(d => d.ESCUELA))].filter(Boolean).sort();
-        panel.innerHTML = '';
+        checkboxes.innerHTML = '';
         escuelas.forEach(e => {
             const lbl = document.createElement('label');
             lbl.className = 'ms-opt';
@@ -146,18 +185,26 @@
             cb.value = e;
             lbl.appendChild(cb);
             lbl.append(' ' + e.charAt(0).toUpperCase() + e.slice(1).toLowerCase());
-            panel.appendChild(lbl);
+            checkboxes.appendChild(lbl);
         });
-        panel.addEventListener('change', () => {
+        checkboxes.addEventListener('change', () => {
             updateTrigger('ms-escuela', 'Todas');
             scheduleAplicar();
         });
-    }
 
-    // ── Actualizar contador ──────────────────────────────────────────────────
-    function actualizarEtiqueta(n) {
-        const el = document.getElementById('filtro-count');
-        if (el) el.textContent = n.toLocaleString('es-MX') + ' registros';
+        // Búsqueda en tiempo real
+        const searchInput = document.getElementById('escuela-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                const q = searchInput.value.trim().toLowerCase();
+                checkboxes.querySelectorAll('.ms-opt').forEach(opt => {
+                    const txt = opt.textContent.trim().toLowerCase();
+                    opt.style.display = txt.includes(q) ? '' : 'none';
+                });
+            });
+            // Evitar que un clic en el input cierre el panel
+            searchInput.addEventListener('click', e => e.stopPropagation());
+        }
     }
 
     function scheduleAplicar() {
@@ -169,11 +216,11 @@
     function aplicar() {
         const registro = getSelected('ms-registro');
         const estatuses = getSelected('ms-estatus');
-        const nivel   = getSelected('ms-nivel');
         const sector  = getSelected('ms-sector');
         const anios   = getSelected('ms-anio').map(Number);
         const etapas  = getSelected('ms-etapa');
         const tipos   = getSelected('ms-tipo');
+        const municipios = getSelected('ms-municipio');
         const escuelas = getSelected('ms-escuela');
 
         const etapaCodes = etapas.map(e =>
@@ -199,7 +246,6 @@
             filtered = filtered.filter(d => estatuses.includes(d.STATUS));
         }
 
-        if (nivel.length)    filtered = filtered.filter(d => nivel.includes(d.NIVEL_EDUCATIVO));
         if (sector.length)   filtered = filtered.filter(d => sector.includes(d.SECTOR));
         if (anios.length)    filtered = filtered.filter(d =>
             Array.isArray(d.AÑOS)
@@ -216,7 +262,8 @@
                 ? d.BECAS.some(b => tipos.includes(b.TIPO_BECA))
                 : tipos.includes(d.TIPO_BECA)
         );
-        if (escuelas.length) filtered = filtered.filter(d => escuelas.includes(d.ESCUELA));
+        if (municipios.length) filtered = filtered.filter(d => municipios.includes(d.MUNICIPIO));
+        if (escuelas.length)   filtered = filtered.filter(d => escuelas.includes(d.ESCUELA));
 
         // Filtro profundo: recortar BECAS según año/etapa/tipo seleccionados
         if (anios.length || etapas.length || tipos.length) {
@@ -235,7 +282,6 @@
         }
 
         window.dashData = filtered;
-        actualizarEtiqueta(filtered.length);
 
         document.querySelectorAll('.chart-container').forEach(el => el.classList.add('loading'));
         document.dispatchEvent(new Event('datosListos'));
@@ -243,7 +289,7 @@
 
     // ── Limpiar todos los filtros ────────────────────────────────────────────
     function limpiarFiltros() {
-        ['ms-registro','ms-estatus','ms-nivel','ms-sector','ms-anio','ms-etapa','ms-tipo','ms-escuela']
+        ['ms-registro','ms-estatus','ms-nivel','ms-sector','ms-anio','ms-etapa','ms-tipo','ms-municipio','ms-escuela']
             .forEach(id => {
                 document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => {
                     cb.checked = false;
@@ -252,6 +298,7 @@
                     id === 'ms-etapa' || id === 'ms-escuela' ? 'Todas' : 'Todos';
                 updateTrigger(id, placeholder);
             });
+            
         actualizarOpcionesEtapa();
         aplicar();
     }
@@ -262,8 +309,8 @@
         window._filtrosInit = true;
 
         poblarEstatus(window.dashDataFull);
+        poblarMunicipios(window.dashDataFull);
         poblarEscuelas(window.dashDataFull);
-        actualizarEtiqueta(window.dashDataFull.length);
 
         initWrap('ms-registro', 'Todos');
         initWrap('ms-nivel',   'Todos');

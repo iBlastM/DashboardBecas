@@ -142,7 +142,7 @@ document.addEventListener('datosListos', () => {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 5. Diversidad Escolar por Colonia — escuelas únicas por colonia (top 15)
+    // 5. Diversidad Escolar por Colonia — escuelas únicas por colonia
     // ═══════════════════════════════════════════════════════════════════════
     const elDC = document.getElementById('chart-diversidad-colonia');
     if (elDC) {
@@ -154,62 +154,76 @@ document.addEventListener('datosListos', () => {
             if (!escColonia[d.COLONIA]) escColonia[d.COLONIA] = new Set();
             escColonia[d.COLONIA].add(d.ESCUELA);
         });
-
-        const TOP = 15;
-        const ranking = Object.entries(escColonia)
+        const fullDC = Object.entries(escColonia)
             .map(([k, v]) => [k, v.size])
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, TOP);
+            .sort((a, b) => b[1] - a[1]);
 
-        const labels = ranking.map(r => r[0]);
-        const vals   = ranking.map(r => r[1]);
+        const renderDiversidadColonia = (n) => {
+            const ranking = fullDC.slice(0, n);
+            const labels  = ranking.map(r => r[0]);
+            const vals    = ranking.map(r => r[1]);
 
-        Plotly.newPlot(elDC, [{
-            type: 'bar',
-            orientation: 'h',
-            x: vals,
-            y: labels,
-            marker: { color: C.paleta[2] },
-            text: vals.map(v => v.toLocaleString('es-MX')),
-            textposition: 'outside',
-            textfont: { color: '#FFF', size: 11 },
-            cliponaxis: false,
-            hovertemplate: '<b>%{y}</b><br>Escuelas únicas: %{x:,}<extra></extra>',
-        }], getLayout('Diversidad Escolar por Colonia (Top 15)', {
-            xaxis: { title: 'Escuelas únicas' },
-            yaxis: { autorange: 'reversed' },
-            margin: { t: 58, r: 60, b: 48, l: 200 },
-        }), plotConfig);
+            Plotly.newPlot(elDC, [{
+                type: 'bar',
+                orientation: 'h',
+                x: vals,
+                y: labels,
+                marker: { color: C.paleta[2] },
+                text: vals.map(v => v.toLocaleString('es-MX')),
+                textposition: 'outside',
+                textfont: { color: '#FFF', size: 11 },
+                cliponaxis: false,
+                hovertemplate: '<b>%{y}</b><br>Escuelas únicas: %{x:,}<extra></extra>',
+            }], getLayout(`Diversidad Escolar por Colonia (Top ${n})`, {
+                xaxis: { title: 'Escuelas únicas' },
+                yaxis: { autorange: 'reversed' },
+                margin: { t: 58, r: 60, b: 48, l: 200 },
+            }), plotConfig);
+        };
+
+        elDC._renderTop = renderDiversidadColonia;
+        const selDC = document.querySelector('[data-chart="chart-diversidad-colonia"]');
+        const nDC   = +(selDC?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        renderDiversidadColonia(nDC);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 6. Top 15 Escuelas por Beneficiarios (barras horizontales)
+    // 6. Top Escuelas por Beneficiarios (barras horizontales)
     // ═══════════════════════════════════════════════════════════════════════
     const elTE = document.getElementById('chart-top-escuelas');
     if (elTE) {
         elTE.classList.remove('loading');
 
-        const conteo  = contarPor(data.filter(d => d.ESCUELA), 'ESCUELA');
-        const ranking = sortedDesc(conteo).slice(0, 15);
-        const labels  = ranking.map(r => r[0]);
-        const vals    = ranking.map(r => r[1]);
-        const maxV    = Math.max(...vals, 1);
+        const conteo   = contarPor(data.filter(d => d.ESCUELA), 'ESCUELA');
+        const fullRank = sortedDesc(conteo);
 
-        Plotly.newPlot(elTE, [{
-            type: 'bar',
-            orientation: 'h',
-            x: vals,
-            y: labels,
-            marker: { color: vals.map(v => v === maxV ? C.naranja : C.verde) },
-            text: vals.map(v => v.toLocaleString('es-MX')),
-            textposition: 'outside',
-            textfont: { color: '#FFF', size: 11 },
-            cliponaxis: false,
-            hovertemplate: '<b>%{y}</b><br>%{x:,} beneficiarios<extra></extra>',
-        }], getLayout('Top 15 Escuelas por Beneficiarios', {
-            xaxis: { title: 'Beneficiarios' },
-            yaxis: { autorange: 'reversed' },
-            margin: { t: 58, r: 80, b: 48, l: 340 },
-        }), plotConfig);
+        const renderTopEscuelas = (n) => {
+            const ranking = fullRank.slice(0, n);
+            const labels  = ranking.map(r => r[0]);
+            const vals    = ranking.map(r => r[1]);
+            const maxV    = Math.max(...vals, 1);
+
+            Plotly.newPlot(elTE, [{
+                type: 'bar',
+                orientation: 'h',
+                x: vals,
+                y: labels,
+                marker: { color: vals.map(v => v === maxV ? C.naranja : C.verde) },
+                text: vals.map(v => v.toLocaleString('es-MX')),
+                textposition: 'outside',
+                textfont: { color: '#FFF', size: 11 },
+                cliponaxis: false,
+                hovertemplate: '<b>%{y}</b><br>%{x:,} beneficiarios<extra></extra>',
+            }], getLayout(`Top ${n} Escuelas por Beneficiarios`, {
+                xaxis: { title: 'Beneficiarios' },
+                yaxis: { autorange: 'reversed' },
+                margin: { t: 58, r: 80, b: 48, l: 340 },
+            }), plotConfig);
+        };
+
+        elTE._renderTop = renderTopEscuelas;
+        const selTE = document.querySelector('[data-chart="chart-top-escuelas"]');
+        const nTE   = +(selTE?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        renderTopEscuelas(nTE);
     }
 });

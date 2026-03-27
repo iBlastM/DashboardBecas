@@ -7,7 +7,7 @@ document.addEventListener('datosListos', () => {
 
     const ids = [
         'kpi-total-val','kpi-inversion-val','kpi-promedio-val','kpi-edad-val',
-        'kpi-total-becas-val','kpi-prom-becas-val','kpi-publico-val','kpi-privado-val',
+        'kpi-total-becas-val','kpi-prom-becas-val'
     ];
 
     if (!total) {
@@ -41,6 +41,4 @@ document.addEventListener('datosListos', () => {
     document.getElementById('kpi-edad-val').textContent       = f(edadProm, { maximumFractionDigits: 1 }) + ' años';
     document.getElementById('kpi-total-becas-val').textContent  = f(totalBecas);
     document.getElementById('kpi-prom-becas-val').textContent   = f(promBecas, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' becas/persona';
-    document.getElementById('kpi-publico-val').textContent    = f(publico) + ' (' + ((publico / total) * 100).toFixed(1) + '%)';
-    document.getElementById('kpi-privado-val').textContent    = f(privado) + ' (' + ((privado / total) * 100).toFixed(1) + '%)';
 });

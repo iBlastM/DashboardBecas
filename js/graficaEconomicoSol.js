@@ -96,9 +96,23 @@ document.addEventListener('datosListos', () => {
             conteo[s] = (conteo[s] || 0) + 1;
         });
 
-        const labels = Object.keys(conteo).map(s => STATUS_LABELS[s] || s);
-        const values = Object.values(conteo);
-        const colors = Object.keys(conteo).map(s => STATUS_COLORS[s] || C.paleta[4]);
+        const totalSD = Object.values(conteo).reduce((a, b) => a + b, 0);
+        const labels = [], values = [], colors = [];
+        let otrosVal = 0;
+        for (const [key, val] of Object.entries(conteo)) {
+            if (totalSD > 0 && (val / totalSD) * 100 < 1) {
+                otrosVal += val;
+            } else {
+                labels.push(STATUS_LABELS[key] || key);
+                values.push(val);
+                colors.push(STATUS_COLORS[key] || C.paleta[4]);
+            }
+        }
+        if (otrosVal > 0) {
+            labels.push('Otros');
+            values.push(otrosVal);
+            colors.push('#6B7280');
+        }
 
         Plotly.newPlot(elSD, [{
             type: 'pie', hole: 0.52,
@@ -296,81 +310,85 @@ document.addEventListener('datosListos', () => {
     if (elTopR) {
         elTopR.classList.remove('loading');
 
-        const TOP_N = 25;
-
-        // Ordenar por rechazos descendente y tomar los primeros TOP_N
-        const ranked = data
-            .map(d => ({
-                curp:       d.CURP || '—',
-                rechazos:   (d.TOTAL_SOLICITUDES || 0) - (d.NUM_BECAS || 0),
-                total:      d.TOTAL_SOLICITUDES || 0,
-                becas:      d.NUM_BECAS || 0,
-                esBenef:    d.ES_BENEFICIARIO,
-                nivel:      d.NIVEL_EDUCATIVO || '',
-                tipoBeca:   d.TIPO_BECA || '',
-            }))
-            .filter(d => d.rechazos > 0)
-            .sort((a, b) => b.rechazos - a.rechazos)
-            .slice(0, TOP_N);
-
-        // Invertir para que el mayor quede arriba en la gráfica horizontal
-        const sorted = ranked.slice().reverse();
-
         const colorBenef = v => v ? '#3B82F6' : '#EF4444';
 
-        Plotly.newPlot(elTopR,
-            [
-                {
-                    type: 'bar',
-                    orientation: 'h',
-                    x: sorted.map(d => d.rechazos),
-                    y: sorted.map(d => d.curp),
-                    marker: { color: sorted.map(d => colorBenef(d.esBenef)) },
-                    text: sorted.map(d =>
-                        d.rechazos.toLocaleString('es-MX') +
-                        '  (' + d.total.toLocaleString('es-MX') + ' sol. · ' +
-                        d.becas + ' aprobadas)'
-                    ),
-                    textposition: 'outside',
-                    textfont: { color: '#FFF', size: 10, family: C.fuente },
-                    cliponaxis: false,
-                    customdata: sorted.map(d => ({
-                        total: d.total,
-                        becas: d.becas,
-                        nivel: d.nivel,
-                        tipo:  d.tipoBeca,
-                        benef: d.esBenef,
-                    })),
-                    hovertemplate:
-                        '<b>%{y}</b><br>' +
-                        'Solicitudes no aprobadas: <b>%{x}</b><br>' +
-                        'Total solicitudes: %{customdata.total}<br>' +
-                        'Becas aprobadas: %{customdata.becas}<br>' +
-                        'Nivel: %{customdata.nivel}<br>' +
-                        'Tipo beca: %{customdata.tipo}<br>' +
-                        'Beneficiario: %{customdata.benef}<extra></extra>',
-                },
-            ],
-            getLayout('Top ' + TOP_N + ' CURPs con mayor número de solicitudes no aprobadas', {
-                xaxis: {
-                    title: 'Solicitudes no aprobadas',
-                    gridcolor: 'rgba(255,255,255,0.08)',
-                },
-                yaxis: { autorange: 'reversed', tickfont: { size: 10 } },
-                margin: { t: 68, r: 220, b: 58, l: 210 },
-                annotations: [
+        // Pre-calcular ranking completo (invariante respecto a n)
+        const fullRanked = data
+            .map(d => ({
+                curp:     d.CURP || '—',
+                rechazos: (d.TOTAL_SOLICITUDES || 0) - (d.NUM_BECAS || 0),
+                total:    d.TOTAL_SOLICITUDES || 0,
+                becas:    d.NUM_BECAS || 0,
+                esBenef:  d.ES_BENEFICIARIO,
+                nivel:    d.NIVEL_EDUCATIVO || '',
+                tipoBeca: d.TIPO_BECA || '',
+            }))
+            .filter(d => d.rechazos > 0)
+            .sort((a, b) => b.rechazos - a.rechazos);
+
+        const renderTopRechazos = (n) => {
+            // Invertir para que el mayor quede arriba en la gráfica horizontal
+            const sorted = fullRanked.slice(0, n).reverse();
+
+            Plotly.newPlot(elTopR,
+                [
                     {
-                        x: 1, y: -0.07, xref: 'paper', yref: 'paper',
-                        xanchor: 'right', yanchor: 'top',
-                        text: '<span style="color:#3B82F6">■</span> Eventualmente beneficiario  ' +
-                              '<span style="color:#EF4444">■</span> Nunca aprobado',
-                        showarrow: false,
-                        font: { color: '#CBD5E1', size: 11, family: C.fuente },
+                        type: 'bar',
+                        orientation: 'h',
+                        x: sorted.map(d => d.rechazos),
+                        y: sorted.map(d => d.curp),
+                        marker: { color: sorted.map(d => colorBenef(d.esBenef)) },
+                        text: sorted.map(d =>
+                            d.rechazos.toLocaleString('es-MX') +
+                            '  (' + d.total.toLocaleString('es-MX') + ' sol. · ' +
+                            d.becas + ' aprobadas)'
+                        ),
+                        textposition: 'outside',
+                        textfont: { color: '#FFF', size: 10, family: C.fuente },
+                        cliponaxis: false,
+                        customdata: sorted.map(d => ({
+                            total: d.total,
+                            becas: d.becas,
+                            nivel: d.nivel,
+                            tipo:  d.tipoBeca,
+                            benef: d.esBenef,
+                        })),
+                        hovertemplate:
+                            '<b>%{y}</b><br>' +
+                            'Solicitudes no aprobadas: <b>%{x}</b><br>' +
+                            'Total solicitudes: %{customdata.total}<br>' +
+                            'Becas aprobadas: %{customdata.becas}<br>' +
+                            'Nivel: %{customdata.nivel}<br>' +
+                            'Tipo beca: %{customdata.tipo}<br>' +
+                            'Beneficiario: %{customdata.benef}<extra></extra>',
                     },
                 ],
-            }),
-            plotConfig
-        );
+                getLayout(`Top ${n} CURPs con mayor número de solicitudes no aprobadas`, {
+                    xaxis: {
+                        title: 'Solicitudes no aprobadas',
+                        gridcolor: 'rgba(255,255,255,0.08)',
+                    },
+                    yaxis: { autorange: 'reversed', tickfont: { size: 10 } },
+                    margin: { t: 68, r: 220, b: 58, l: 210 },
+                    annotations: [
+                        {
+                            x: 1, y: -0.07, xref: 'paper', yref: 'paper',
+                            xanchor: 'right', yanchor: 'top',
+                            text: '<span style="color:#3B82F6">■</span> Eventualmente beneficiario  ' +
+                                  '<span style="color:#EF4444">■</span> Nunca aprobado',
+                            showarrow: false,
+                            font: { color: '#CBD5E1', size: 11, family: C.fuente },
+                        },
+                    ],
+                }),
+                plotConfig
+            );
+        };
+
+        elTopR._renderTop = renderTopRechazos;
+        const selTopR = document.querySelector('[data-chart="chart-top-rechazos-curp"]');
+        const nTopR   = +(selTopR?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        renderTopRechazos(nTopR);
     }
 
     // ═══════════════════════════════════════════════════════════════════

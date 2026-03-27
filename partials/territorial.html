@@ -3,13 +3,32 @@
 <!-- Beneficiarios por Delegación -->
 <div class="charts-grid cols-1">
     <div class="chart-card">
+        <div class="top-selector" data-chart="chart-delegacion-barras">
+            <span class="top-selector-label">Mostrar:</span>
+            <button class="top-btn" data-n="5">Top 5</button>
+            <button class="top-btn" data-n="10">Top 10</button>
+            <button class="top-btn active" data-n="15">Top 15</button>
+        </div>
         <div id="chart-delegacion-barras" class="chart-container chart-xl"></div>
     </div>
 </div>
 
 <!-- Delegación: Inversión vs Beneficiarios (scatter) + Treemap -->
 <div class="charts-grid cols-2">
-    <div class="chart-card">
+    <div class="chart-card" style="position:relative;">
+        <div class="chk-dropdown-wrap">
+            <button id="dsc-toggle" class="chk-dropdown-btn">
+                <span id="dsc-toggle-label">Delegaciones</span>
+                <svg class="chk-chevron" viewBox="0 0 10 6" width="10" height="6"><path d="M0 0l5 6 5-6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+            <div id="delegacion-scatter-filter" class="chk-dropdown-panel">
+                <div class="chk-dropdown-actions">
+                    <button id="dsc-all"  class="chk-action-btn">Todos</button>
+                    <button id="dsc-none" class="chk-action-btn">Ninguno</button>
+                </div>
+                <div id="delegacion-scatter-items" class="chart-checklist-items"></div>
+            </div>
+        </div>
         <div id="chart-delegacion-scatter" class="chart-container chart-lg"></div>
     </div>
     <div class="chart-card">
@@ -17,9 +36,15 @@
     </div>
 </div>
 
-<!-- Top 15 Colonias por Beneficiarios (ancho completo) -->
+<!-- Top Colonias por Beneficiarios (ancho completo) -->
 <div class="charts-grid cols-1">
     <div class="chart-card">
+        <div class="top-selector" data-chart="chart-top15-colonias">
+            <span class="top-selector-label">Mostrar:</span>
+            <button class="top-btn" data-n="5">Top 5</button>
+            <button class="top-btn" data-n="10">Top 10</button>
+            <button class="top-btn active" data-n="15">Top 15</button>
+        </div>
         <div id="chart-top15-colonias" class="chart-container chart-xxl"></div>
     </div>
 </div>

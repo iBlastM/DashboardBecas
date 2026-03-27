@@ -17,11 +17,12 @@ async function cargarDatos() {
         const [textA, textB] = await Promise.all([respA.text(), respB.text()]);
 
         // JSON Lines: una línea = un registro
+        // NaN no es JSON válido (Python/pandas lo escribe literal); se reemplaza por null
         const parseLines = text => text
             .trim()
             .split('\n')
             .filter(l => l.trim().length > 0)
-            .map(l => JSON.parse(l));
+            .map(l => JSON.parse(l.replace(/:\s*NaN\b/g, ': null')));
 
         const dataA = parseLines(textA);
         const dataB = parseLines(textB);
@@ -78,4 +79,3 @@ async function cargarDatos() {
         document.querySelectorAll('.chart-container').forEach(el => el.classList.remove('loading'));
     }
 }
-// cargarDatos() es llamada por loader.js una vez que los partials están en el DOM.

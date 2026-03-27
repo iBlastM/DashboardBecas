@@ -16,57 +16,66 @@ document.addEventListener('datosListos', () => {
     if (elDEL) {
         elDEL.classList.remove('loading');
 
-        const conteoDel = contarPor(data.filter(d => d.DELEGACION), 'DELEGACION');
-        const sumasDel  = sumarPor(data.filter(d => d.DELEGACION), 'DELEGACION', 'IMPORTE');
-        const rankingDel = sortedDesc(conteoDel);
-        const labsDel = rankingDel.map(r => r[0]);
-        const valsDel = rankingDel.map(r => r[1]);
-        const invDel  = labsDel.map(l => sumasDel[l] || 0);
+        const conteoDel  = contarPor(data.filter(d => d.DELEGACION), 'DELEGACION');
+        const sumasDel   = sumarPor(data.filter(d => d.DELEGACION), 'DELEGACION', 'IMPORTE');
+        const fullRankDel = sortedDesc(conteoDel);
 
-        Plotly.newPlot(elDEL, [
-            {
-                type: 'bar',
-                orientation: 'h',
-                name: 'Beneficiarios',
-                x: valsDel,
-                y: labsDel,
-                marker: { color: C.verde },
-                text: valsDel.map(v => v.toLocaleString('es-MX')),
-                textposition: 'outside',
-                textfont: { color: '#FFF', size: 11 },
-                cliponaxis: false,
-                hovertemplate: '<b>%{y}</b><br>%{x:,} beneficiarios<extra></extra>',
-                xaxis: 'x',
-            },
-            {
-                type: 'scatter',
-                mode: 'markers',
-                name: 'Inversión',
-                x: invDel,
-                y: labsDel,
-                marker: {
-                    color: C.naranja,
-                    size: 10,
-                    symbol: 'diamond',
-                    line: { color: '#FFF', width: 1 },
+        const renderTopDelegacion = (n) => {
+            const rankingDel = fullRankDel.slice(0, n);
+            const labsDel = rankingDel.map(r => r[0]);
+            const valsDel = rankingDel.map(r => r[1]);
+            const invDel  = labsDel.map(l => sumasDel[l] || 0);
+
+            Plotly.newPlot(elDEL, [
+                {
+                    type: 'bar',
+                    orientation: 'h',
+                    name: 'Beneficiarios',
+                    x: valsDel,
+                    y: labsDel,
+                    marker: { color: C.verde },
+                    text: valsDel.map(v => v.toLocaleString('es-MX')),
+                    textposition: 'outside',
+                    textfont: { color: '#FFF', size: 11 },
+                    cliponaxis: false,
+                    hovertemplate: '<b>%{y}</b><br>%{x:,} beneficiarios<extra></extra>',
+                    xaxis: 'x',
                 },
-                hovertemplate: '<b>%{y}</b><br>Inversión: $%{x:,.0f}<extra></extra>',
-                xaxis: 'x2',
-            },
-        ], getLayout('Beneficiarios e Inversión por Delegación', {
-            barmode: 'overlay',
-            xaxis:  { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
-            xaxis2: {
-                title: 'Inversión Total ($)',
-                overlaying: 'x',
-                side: 'top',
-                showgrid: false,
-                tickformat: '$,.0f',
-            },
-            yaxis: { autorange: 'reversed' },
-            margin: { t: 68, r: 80, b: 68, l: 240 },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
-        }), plotConfig);
+                {
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'Inversión',
+                    x: invDel,
+                    y: labsDel,
+                    marker: {
+                        color: C.naranja,
+                        size: 10,
+                        symbol: 'diamond',
+                        line: { color: '#FFF', width: 1 },
+                    },
+                    hovertemplate: '<b>%{y}</b><br>Inversión: $%{x:,.0f}<extra></extra>',
+                    xaxis: 'x2',
+                },
+            ], getLayout(`Top ${n} Delegaciones · Beneficiarios e Inversión`, {
+                barmode: 'overlay',
+                xaxis:  { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
+                xaxis2: {
+                    title: 'Inversión Total ($)',
+                    overlaying: 'x',
+                    side: 'top',
+                    showgrid: false,
+                    tickformat: '$,.0f',
+                },
+                yaxis: { autorange: 'reversed' },
+                margin: { t: 68, r: 80, b: 68, l: 240 },
+                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
+            }), plotConfig);
+        };
+
+        elDEL._renderTop = renderTopDelegacion;
+        const selDEL = document.querySelector('[data-chart="chart-delegacion-barras"]');
+        const nDEL   = +(selDEL?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        renderTopDelegacion(nDEL);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -76,43 +85,105 @@ document.addEventListener('datosListos', () => {
     if (elDSC) {
         elDSC.classList.remove('loading');
 
-        const conteoDel = contarPor(data.filter(d => d.DELEGACION), 'DELEGACION');
-        const sumasDel  = sumarPor(data.filter(d => d.DELEGACION), 'DELEGACION', 'IMPORTE');
-        const delegaciones = Object.keys(conteoDel);
-        const xs = delegaciones.map(k => sumasDel[k] || 0);
-        const ys = delegaciones.map(k => conteoDel[k]);
-        const prom = delegaciones.map((k, i) => ys[i] > 0 ? xs[i] / ys[i] : 0);
+        const conteoDel  = contarPor(data.filter(d => d.DELEGACION), 'DELEGACION');
+        const sumasDel   = sumarPor(data.filter(d => d.DELEGACION), 'DELEGACION', 'IMPORTE');
+        const todasDel   = Object.keys(conteoDel);
 
-        Plotly.newPlot(elDSC, [{
-            type: 'scatter',
-            mode: 'markers+text',
-            x: xs,
-            y: ys,
-            text: delegaciones,
-            textposition: 'top center',
-            textfont: { size: 9, color: 'rgba(255,255,255,0.8)' },
-            marker: {
-                size: prom.map(p => Math.max(8, Math.min(36, p / 300))),
-                color: ys,
-                colorscale: [
-                    [0,   C.paperBg],
-                    [0.4, C.verde],
-                    [1,   C.naranja],
-                ],
-                showscale: true,
-                colorbar: {
-                    title: { text: 'Becarios', font: { color: '#FFF', size: 10 } },
-                    tickfont: { color: '#FFF', size: 9 },
-                    thickness: 12,
+        // Build checklist items
+        const itemsEl = document.getElementById('delegacion-scatter-items');
+        if (itemsEl) {
+            itemsEl.innerHTML = todasDel.map(del =>
+                `<label class="chk-item">
+                    <input type="checkbox" class="dsc-chk" value="${del}" checked>
+                    <span title="${del}">${del}</span>
+                </label>`
+            ).join('');
+        }
+
+        const renderScatter = () => {
+            const checked      = new Set([...document.querySelectorAll('.dsc-chk:checked')].map(c => c.value));
+            const delegaciones = todasDel.filter(d => checked.has(d));
+            const xs   = delegaciones.map(k => sumasDel[k] || 0);
+            const ys   = delegaciones.map(k => conteoDel[k]);
+            const prom = delegaciones.map((k, i) => ys[i] > 0 ? xs[i] / ys[i] : 0);
+
+            Plotly.react(elDSC, [{
+                type: 'scatter',
+                mode: 'markers+text',
+                x: xs,
+                y: ys,
+                text: delegaciones,
+                textposition: 'top center',
+                textfont: { size: 9, color: 'rgba(255,255,255,0.8)' },
+                marker: {
+                    size: prom.map(p => Math.max(8, Math.min(36, p / 300))),
+                    color: ys,
+                    colorscale: [
+                        [0,   C.paperBg],
+                        [0.4, C.verde],
+                        [1,   C.naranja],
+                    ],
+                    showscale: true,
+                    colorbar: {
+                        title: { text: 'Becarios', font: { color: '#FFF', size: 10 } },
+                        tickfont: { color: '#FFF', size: 9 },
+                        thickness: 12,
+                    },
+                    line: { color: 'rgba(255,255,255,0.3)', width: 1 },
                 },
-                line: { color: 'rgba(255,255,255,0.3)', width: 1 },
-            },
-            hovertemplate: '<b>%{text}</b><br>Beneficiarios: %{y:,}<br>Inversión: $%{x:,.0f}<extra></extra>',
-        }], getLayout('Inversión vs Beneficiarios por Delegación', {
-            xaxis: { title: 'Inversión Total ($)', tickformat: '$,.0f' },
-            yaxis: { title: 'Beneficiarios' },
-            margin: { t: 58, r: 30, b: 58, l: 70 },
-        }), plotConfig);
+                hovertemplate: '<b>%{text}</b><br>Beneficiarios: %{y:,}<br>Inversión: $%{x:,.0f}<extra></extra>',
+            }], getLayout('Inversión vs Beneficiarios por Delegación', {
+                xaxis: { title: 'Inversión Total ($)', tickformat: '$,.0f' },
+                yaxis: { title: 'Beneficiarios' },
+                margin: { t: 58, r: 30, b: 58, l: 70 },
+            }), plotConfig);
+        };
+
+        renderScatter();
+
+        if (itemsEl) {
+            itemsEl.addEventListener('change', () => {
+                renderScatter();
+                updateLabel();
+            });
+        }
+
+        // Dropdown toggle
+        const toggleBtn   = document.getElementById('dsc-toggle');
+        const panel       = document.getElementById('delegacion-scatter-filter');
+        const labelEl     = document.getElementById('dsc-toggle-label');
+
+        const updateLabel = () => {
+            const total   = document.querySelectorAll('.dsc-chk').length;
+            const checked = document.querySelectorAll('.dsc-chk:checked').length;
+            labelEl.textContent = checked === total ? 'Delegaciones' :
+                                  checked === 0     ? 'Sin selección' :
+                                  `${checked} / ${total}`;
+        };
+
+        toggleBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const open = panel.classList.toggle('open');
+            toggleBtn.classList.toggle('open', open);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!toggleBtn?.contains(e.target) && !panel?.contains(e.target)) {
+                panel?.classList.remove('open');
+                toggleBtn?.classList.remove('open');
+            }
+        });
+
+        document.getElementById('dsc-all')?.addEventListener('click', () => {
+            document.querySelectorAll('.dsc-chk').forEach(c => c.checked = true);
+            renderScatter();
+            updateLabel();
+        });
+        document.getElementById('dsc-none')?.addEventListener('click', () => {
+            document.querySelectorAll('.dsc-chk').forEach(c => c.checked = false);
+            renderScatter();
+            updateLabel();
+        });
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -166,65 +237,74 @@ document.addEventListener('datosListos', () => {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 4. Top 15 Colonias por Beneficiarios (barras horizontales)
+    // 4. Top Colonias por Beneficiarios (barras horizontales)
     // ═══════════════════════════════════════════════════════════════════════
     const elTOP = document.getElementById('chart-top15-colonias');
     if (elTOP) {
         elTOP.classList.remove('loading');
 
-        const conteo  = contarPor(data.filter(d => d.COLONIA), 'COLONIA');
-        const ranking = sortedDesc(conteo).slice(0, 15);
-        const labels  = ranking.map(r => r[0]);
-        const vals    = ranking.map(r => r[1]);
-        const sumas   = sumarPor(data.filter(d => d.COLONIA), 'COLONIA', 'IMPORTE');
-        const invers  = labels.map(l => sumas[l] || 0);
+        const conteo   = contarPor(data.filter(d => d.COLONIA), 'COLONIA');
+        const sumasT   = sumarPor(data.filter(d => d.COLONIA), 'COLONIA', 'IMPORTE');
+        const fullRank = sortedDesc(conteo);
 
         const fmt = v => (v || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 });
 
-        Plotly.newPlot(elTOP, [
-            {
-                type: 'bar',
-                orientation: 'h',
-                name: 'Beneficiarios',
-                x: vals,
-                y: labels,
-                marker: { color: C.verde },
-                text: vals.map(v => v.toLocaleString('es-MX')),
-                textposition: 'outside',
-                textfont: { color: '#FFF', size: 11 },
-                cliponaxis: false,
-                hovertemplate: '<b>%{y}</b><br>%{x:,} beneficiarios<extra></extra>',
-                xaxis: 'x',
-            },
-            {
-                type: 'scatter',
-                mode: 'markers',
-                name: 'Inversión',
-                x: invers,
-                y: labels,
-                marker: {
-                    color: C.naranja,
-                    size: 10,
-                    symbol: 'diamond',
-                    line: { color: '#FFF', width: 1 },
+        const renderTopColonias = (n) => {
+            const ranking = fullRank.slice(0, n);
+            const labels  = ranking.map(r => r[0]);
+            const vals    = ranking.map(r => r[1]);
+            const invers  = labels.map(l => sumasT[l] || 0);
+
+            Plotly.newPlot(elTOP, [
+                {
+                    type: 'bar',
+                    orientation: 'h',
+                    name: 'Beneficiarios',
+                    x: vals,
+                    y: labels,
+                    marker: { color: C.verde },
+                    text: vals.map(v => v.toLocaleString('es-MX')),
+                    textposition: 'outside',
+                    textfont: { color: '#FFF', size: 11 },
+                    cliponaxis: false,
+                    hovertemplate: '<b>%{y}</b><br>%{x:,} beneficiarios<extra></extra>',
+                    xaxis: 'x',
                 },
-                hovertemplate: '<b>%{y}</b><br>Inversión: $%{x:,.0f}<extra></extra>',
-                xaxis: 'x2',
-            },
-        ], getLayout('Top 15 Colonias por Beneficiarios', {
-            barmode: 'overlay',
-            xaxis:  { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)', side: 'bottom' },
-            xaxis2: {
-                title: 'Inversión Total ($)',
-                overlaying: 'x',
-                side: 'top',
-                showgrid: false,
-                tickformat: '$,.0f',
-            },
-            yaxis:  { autorange: 'reversed' },
-            margin: { t: 68, r: 80, b: 68, l: 220 },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
-        }), plotConfig);
+                {
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'Inversión',
+                    x: invers,
+                    y: labels,
+                    marker: {
+                        color: C.naranja,
+                        size: 10,
+                        symbol: 'diamond',
+                        line: { color: '#FFF', width: 1 },
+                    },
+                    hovertemplate: '<b>%{y}</b><br>Inversión: $%{x:,.0f}<extra></extra>',
+                    xaxis: 'x2',
+                },
+            ], getLayout(`Top ${n} Colonias por Beneficiarios`, {
+                barmode: 'overlay',
+                xaxis:  { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)', side: 'bottom' },
+                xaxis2: {
+                    title: 'Inversión Total ($)',
+                    overlaying: 'x',
+                    side: 'top',
+                    showgrid: false,
+                    tickformat: '$,.0f',
+                },
+                yaxis:  { autorange: 'reversed' },
+                margin: { t: 68, r: 80, b: 68, l: 220 },
+                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
+            }), plotConfig);
+        };
+
+        elTOP._renderTop = renderTopColonias;
+        const selTOP = document.querySelector('[data-chart="chart-top15-colonias"]');
+        const nTOP   = +(selTOP?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        renderTopColonias(nTOP);
     }
 
     // ═══════════════════════════════════════════════════════════════════════

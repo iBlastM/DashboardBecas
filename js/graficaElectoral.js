@@ -14,6 +14,29 @@ document.addEventListener('datosListos', () => {
     const labelDistrito = (tipo, num) =>
         num != null ? `${tipo} ${num}` : 'Sin dato';
 
+    /**
+     * Agrupa entradas con menos del 1% del total bajo la clave "Otros".
+     * Devuelve { labels, values } listos para Plotly.
+     */
+    const agruparOtros = (conteo, umbralPct = 1) => {
+        const total = Object.values(conteo).reduce((a, b) => a + b, 0);
+        const labels = [], values = [];
+        let otros = 0;
+        for (const [lab, val] of Object.entries(conteo)) {
+            if (total > 0 && (val / total) * 100 < umbralPct) {
+                otros += val;
+            } else {
+                labels.push(lab);
+                values.push(val);
+            }
+        }
+        if (otros > 0) {
+            labels.push('Otros');
+            values.push(otros);
+        }
+        return { labels, values };
+    };
+
     // ═══════════════════════════════════════════════════════════════════════
     // 1. Distribución por Distrito Local — Pie
     // ═══════════════════════════════════════════════════════════════════════
@@ -23,8 +46,8 @@ document.addEventListener('datosListos', () => {
 
         const validDL = data.filter(d => d.DISTRITO_LOCAL != null);
         const conteoDL = contarPor(validDL, 'DISTRITO_LOCAL');
-        const labsDL = Object.keys(conteoDL).map(k => labelDistrito('Distrito Local', k));
-        const valsDL = Object.values(conteoDL);
+        const { labels: rawLabsDL, values: valsDL } = agruparOtros(conteoDL);
+        const labsDL = rawLabsDL.map(k => k === 'Otros' ? 'Otros' : labelDistrito('Distrito Local', k));
 
         Plotly.newPlot(elDLP, [{
             type: 'pie',
@@ -51,8 +74,8 @@ document.addEventListener('datosListos', () => {
 
         const validDF = data.filter(d => d.DISTRITO_FEDERAL != null);
         const conteoDF = contarPor(validDF, 'DISTRITO_FEDERAL');
-        const labsDF = Object.keys(conteoDF).map(k => labelDistrito('Distrito Federal', k));
-        const valsDF = Object.values(conteoDF);
+        const { labels: rawLabsDF, values: valsDF } = agruparOtros(conteoDF);
+        const labsDF = rawLabsDF.map(k => k === 'Otros' ? 'Otros' : labelDistrito('Distrito Federal', k));
 
         Plotly.newPlot(elDFP, [{
             type: 'pie',
@@ -182,128 +205,141 @@ document.addEventListener('datosListos', () => {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 5. Top 20 Secciones Electorales por Beneficiarios (barras horizontales)
+    // 5. Top Secciones Electorales por Beneficiarios (barras horizontales)
     // ═══════════════════════════════════════════════════════════════════════
     const elTS = document.getElementById('chart-top-secciones');
     if (elTS) {
         elTS.classList.remove('loading');
 
-        const validSE = data.filter(d => d.SECCION_ELECTORAL != null);
+        const validSE  = data.filter(d => d.SECCION_ELECTORAL != null);
         const conteoSE = contarPor(validSE, 'SECCION_ELECTORAL');
         const sumasSE  = sumarPor(validSE, 'SECCION_ELECTORAL', 'IMPORTE');
-        const TOP = 20;
-        const rankingSE = sortedDesc(conteoSE).slice(0, TOP);
-        const labsSE = rankingSE.map(r => `Sección ${r[0]}`);
-        const valsSE = rankingSE.map(r => r[1]);
-        const invSE  = rankingSE.map(r => sumasSE[r[0]] || 0);
+        const fullRankSE = sortedDesc(conteoSE);
 
-        Plotly.newPlot(elTS, [
-            {
-                type: 'bar',
-                orientation: 'h',
-                name: 'Beneficiarios',
-                x: valsSE,
-                y: labsSE,
-                marker: { color: C.verde },
-                text: valsSE.map(v => v.toLocaleString('es-MX')),
-                textposition: 'outside',
-                textfont: { color: '#FFF', size: 11 },
-                cliponaxis: false,
-                hovertemplate: '<b>%{y}</b><br>%{x:,} beneficiarios<extra></extra>',
-                xaxis: 'x',
-            },
-            {
-                type: 'scatter',
-                mode: 'markers',
-                name: 'Inversión',
-                x: invSE,
-                y: labsSE,
-                marker: {
-                    color: C.naranja,
-                    size: 10,
-                    symbol: 'diamond',
-                    line: { color: '#FFF', width: 1 },
+        const renderTopSecciones = (n) => {
+            const rankingSE = fullRankSE.slice(0, n);
+            const labsSE = rankingSE.map(r => `Sección ${r[0]}`);
+            const valsSE = rankingSE.map(r => r[1]);
+            const invSE  = rankingSE.map(r => sumasSE[r[0]] || 0);
+
+            Plotly.newPlot(elTS, [
+                {
+                    type: 'bar',
+                    orientation: 'h',
+                    name: 'Beneficiarios',
+                    x: valsSE,
+                    y: labsSE,
+                    marker: { color: C.verde },
+                    text: valsSE.map(v => v.toLocaleString('es-MX')),
+                    textposition: 'outside',
+                    textfont: { color: '#FFF', size: 11 },
+                    cliponaxis: false,
+                    hovertemplate: '<b>%{y}</b><br>%{x:,} beneficiarios<extra></extra>',
+                    xaxis: 'x',
                 },
-                hovertemplate: '<b>%{y}</b><br>Inversión: $%{x:,.0f}<extra></extra>',
-                xaxis: 'x2',
-            },
-        ], getLayout('Top 20 Secciones Electorales por Beneficiarios', {
-            barmode: 'overlay',
-            xaxis:  { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
-            xaxis2: {
-                title: 'Inversión Total ($)',
-                overlaying: 'x',
-                side: 'top',
-                showgrid: false,
-                tickformat: '$,.0f',
-            },
-            yaxis:  { autorange: 'reversed' },
-            margin: { t: 68, r: 80, b: 68, l: 110 },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
-        }), plotConfig);
+                {
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'Inversión',
+                    x: invSE,
+                    y: labsSE,
+                    marker: {
+                        color: C.naranja,
+                        size: 10,
+                        symbol: 'diamond',
+                        line: { color: '#FFF', width: 1 },
+                    },
+                    hovertemplate: '<b>%{y}</b><br>Inversión: $%{x:,.0f}<extra></extra>',
+                    xaxis: 'x2',
+                },
+            ], getLayout(`Top ${n} Secciones Electorales por Beneficiarios`, {
+                barmode: 'overlay',
+                xaxis:  { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
+                xaxis2: {
+                    title: 'Inversión Total ($)',
+                    overlaying: 'x',
+                    side: 'top',
+                    showgrid: false,
+                    tickformat: '$,.0f',
+                },
+                yaxis:  { autorange: 'reversed' },
+                margin: { t: 68, r: 80, b: 68, l: 110 },
+                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
+            }), plotConfig);
+        };
+
+        elTS._renderTop = renderTopSecciones;
+        const selTS = document.querySelector('[data-chart="chart-top-secciones"]');
+        const nTS   = +(selTS?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        renderTopSecciones(nTS);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 6. Top 20 Secciones con Mayor Inversión (barras horizontales)
+    // 6. Top Secciones con Mayor Inversión (barras horizontales)
     // ═══════════════════════════════════════════════════════════════════════
     const elSI = document.getElementById('chart-seccion-inversion');
     if (elSI) {
         elSI.classList.remove('loading');
 
-        const validSE = data.filter(d => d.SECCION_ELECTORAL != null);
-        const sumasSE  = sumarPor(validSE, 'SECCION_ELECTORAL', 'IMPORTE');
-        const conteoSE = contarPor(validSE, 'SECCION_ELECTORAL');
-        const TOP = 20;
-        // Ordenar por inversión
-        const rankingSEInv = Object.entries(sumasSE)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, TOP);
-        const labsSEI = rankingSEInv.map(r => `Sección ${r[0]}`);
-        const invSEI  = rankingSEInv.map(r => r[1]);
-        const benSEI  = rankingSEInv.map(r => conteoSE[r[0]] || 0);
+        const validSEI  = data.filter(d => d.SECCION_ELECTORAL != null);
+        const sumasSEI  = sumarPor(validSEI, 'SECCION_ELECTORAL', 'IMPORTE');
+        const conteoSEI = contarPor(validSEI, 'SECCION_ELECTORAL');
+        const fullRankSEI = Object.entries(sumasSEI).sort((a, b) => b[1] - a[1]);
 
-        Plotly.newPlot(elSI, [
-            {
-                type: 'bar',
-                orientation: 'h',
-                name: 'Inversión',
-                x: invSEI,
-                y: labsSEI,
-                marker: { color: C.naranja },
-                text: invSEI.map(v => '$' + v.toLocaleString('es-MX', { maximumFractionDigits: 0 })),
-                textposition: 'outside',
-                textfont: { color: '#FFF', size: 11 },
-                cliponaxis: false,
-                hovertemplate: '<b>%{y}</b><br>Inversión: $%{x:,.0f}<extra></extra>',
-                xaxis: 'x',
-            },
-            {
-                type: 'scatter',
-                mode: 'markers',
-                name: 'Beneficiarios',
-                x: benSEI,
-                y: labsSEI,
-                marker: {
-                    color: C.verde,
-                    size: 10,
-                    symbol: 'circle',
-                    line: { color: '#FFF', width: 1 },
+        const renderTopSecInversion = (n) => {
+            const rankingSEInv = fullRankSEI.slice(0, n);
+            const labsSEI = rankingSEInv.map(r => `Sección ${r[0]}`);
+            const invSEI  = rankingSEInv.map(r => r[1]);
+            const benSEI  = rankingSEInv.map(r => conteoSEI[r[0]] || 0);
+
+            Plotly.newPlot(elSI, [
+                {
+                    type: 'bar',
+                    orientation: 'h',
+                    name: 'Inversión',
+                    x: invSEI,
+                    y: labsSEI,
+                    marker: { color: C.naranja },
+                    text: invSEI.map(v => '$' + v.toLocaleString('es-MX', { maximumFractionDigits: 0 })),
+                    textposition: 'outside',
+                    textfont: { color: '#FFF', size: 11 },
+                    cliponaxis: false,
+                    hovertemplate: '<b>%{y}</b><br>Inversión: $%{x:,.0f}<extra></extra>',
+                    xaxis: 'x',
                 },
-                hovertemplate: '<b>%{y}</b><br>%{x:,} beneficiarios<extra></extra>',
-                xaxis: 'x2',
-            },
-        ], getLayout('Top 20 Secciones Electorales por Inversión', {
-            barmode: 'overlay',
-            xaxis:  { title: 'Inversión Total ($)', tickformat: '$,.0f', gridcolor: 'rgba(255,255,255,0.08)' },
-            xaxis2: {
-                title: 'Beneficiarios',
-                overlaying: 'x',
-                side: 'top',
-                showgrid: false,
-            },
-            yaxis:  { autorange: 'reversed' },
-            margin: { t: 68, r: 80, b: 68, l: 110 },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
-        }), plotConfig);
+                {
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'Beneficiarios',
+                    x: benSEI,
+                    y: labsSEI,
+                    marker: {
+                        color: C.verde,
+                        size: 10,
+                        symbol: 'circle',
+                        line: { color: '#FFF', width: 1 },
+                    },
+                    hovertemplate: '<b>%{y}</b><br>%{x:,} beneficiarios<extra></extra>',
+                    xaxis: 'x2',
+                },
+            ], getLayout(`Top ${n} Secciones Electorales por Inversión`, {
+                barmode: 'overlay',
+                xaxis:  { title: 'Inversión Total ($)', tickformat: '$,.0f', gridcolor: 'rgba(255,255,255,0.08)' },
+                xaxis2: {
+                    title: 'Beneficiarios',
+                    overlaying: 'x',
+                    side: 'top',
+                    showgrid: false,
+                },
+                yaxis:  { autorange: 'reversed' },
+                margin: { t: 68, r: 80, b: 68, l: 110 },
+                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
+            }), plotConfig);
+        };
+
+        elSI._renderTop = renderTopSecInversion;
+        const selSI = document.querySelector('[data-chart="chart-seccion-inversion"]');
+        const nSI   = +(selSI?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        renderTopSecInversion(nSI);
     }
 });

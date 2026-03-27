@@ -252,82 +252,81 @@ document.addEventListener('datosListos', () => {
     if (elTopCurps) {
         elTopCurps.classList.remove('loading');
 
-        // Agrupar beneficiarios por NUM_BECAS
+        // Agrupar beneficiarios por NUM_BECAS (invariante respecto a n)
         const grupos = {};
         data.filter(d => d.CURP && d.NUM_BECAS > 0).forEach(d => {
             const k = d.NUM_BECAS;
             if (!grupos[k]) grupos[k] = [];
             grupos[k].push(d.CURP);
         });
+        const todasClaves = Object.keys(grupos).map(Number).sort((a, b) => b - a);
 
-        // Ordenar por NUM_BECAS desc, tomar top 15 puestos únicos
-        const TOP_N = 15;
-        const puestos = Object.keys(grupos)
-            .map(Number)
-            .sort((a, b) => b - a)
-            .slice(0, TOP_N);
+        const MAX_CURPS_TOOLTIP = 30;
 
-        const MAX_CURPS_TOOLTIP = 30; // máx CURPs listados en el tooltip
+        const renderTopCurps = (n) => {
+            const puestos = todasClaves.slice(0, n);
 
-        // Construir arrays para la gráfica
-        const etiquetas = puestos.map((nb, i) => {
-            const n = grupos[nb].length;
-            return `#${i + 1} · ${nb} becas  (${n.toLocaleString('es-MX')} benef.)`;
-        });
+            const etiquetas = puestos.map((nb, i) => {
+                const cnt = grupos[nb].length;
+                return `#${i + 1} · ${nb} becas  (${cnt.toLocaleString('es-MX')} benef.)`;
+            });
 
-        const cantidades = puestos.map(nb => grupos[nb].length);
+            const cantidades = puestos.map(nb => grupos[nb].length);
+            const maxPct = Math.max(...cantidades, 1);
 
-        const maxPct = Math.max(...cantidades);
+            const coloresTop = puestos.map((_, i) => {
+                const t = i / Math.max(puestos.length - 1, 1);
+                const r = Math.round(229 - t * (229 - 82));
+                const g = Math.round(134 + t * (188 - 134));
+                const b = Math.round(6   + t * (163 - 6));
+                return `rgb(${r},${g},${b})`;
+            });
 
-        // Degradado de color: 1er puesto = naranja intenso → últimos = más fríos
-        const coloresTop = puestos.map((_, i) => {
-            const t = i / Math.max(puestos.length - 1, 1);
-            const r = Math.round(229 - t * (229 - 82));
-            const g = Math.round(134 + t * (188 - 134));
-            const b = Math.round(6   + t * (163 - 6));
-            return `rgb(${r},${g},${b})`;
-        });
+            const tooltips = puestos.map((nb, i) => {
+                const lista   = grupos[nb];
+                const mostrar = lista.slice(0, MAX_CURPS_TOOLTIP);
+                const extras  = lista.length - mostrar.length;
+                return (
+                    `<b>Puesto #${i + 1} · ${nb} becas</b><br>` +
+                    `${lista.length.toLocaleString('es-MX')} beneficiarios<br>` +
+                    `<br><b>CURPs:</b><br>` +
+                    mostrar.join('<br>') +
+                    (extras > 0 ? `<br><i>… y ${extras} más</i>` : '')
+                );
+            });
 
-        // Tooltip: lista de CURPs (truncada si hay muchos)
-        const tooltips = puestos.map((nb, i) => {
-            const lista = grupos[nb];
-            const mostrar = lista.slice(0, MAX_CURPS_TOOLTIP);
-            const extras  = lista.length - mostrar.length;
-            return (
-                `<b>Puesto #${i + 1} · ${nb} becas</b><br>` +
-                `${lista.length.toLocaleString('es-MX')} beneficiarios<br>` +
-                `<br><b>CURPs:</b><br>` +
-                mostrar.join('<br>') +
-                (extras > 0 ? `<br><i>… y ${extras} más</i>` : '')
-            );
-        });
+            Plotly.newPlot(elTopCurps, [{
+                type: 'bar',
+                orientation: 'h',
+                x: cantidades,
+                y: etiquetas,
+                marker: {
+                    color: coloresTop,
+                    line: { color: 'rgba(255,255,255,0.15)', width: 1 },
+                },
+                text: cantidades.map(v => v.toLocaleString('es-MX')),
+                textposition: 'outside',
+                textfont: { color: '#FFF', size: 11 },
+                cliponaxis: false,
+                customdata: tooltips,
+                hovertemplate: '%{customdata}<extra></extra>',
+            }], getLayout(`Top ${n} Puestos · Número de Becas Otorgadas por Beneficiario`, {
+                xaxis: {
+                    title: 'Beneficiarios en el puesto',
+                    gridcolor: 'rgba(255,255,255,0.08)',
+                    range: [0, maxPct * 1.2],
+                },
+                yaxis: {
+                    autorange: 'reversed',
+                    tickfont: { size: 11 },
+                },
+                margin: { t: 58, r: 80, b: 58, l: 230 },
+            }), plotConfig);
+        };
 
-        Plotly.newPlot(elTopCurps, [{
-            type: 'bar',
-            orientation: 'h',
-            x: cantidades,
-            y: etiquetas,
-            marker: {
-                color: coloresTop,
-                line: { color: 'rgba(255,255,255,0.15)', width: 1 },
-            },
-            text: cantidades.map(v => v.toLocaleString('es-MX')),
-            textposition: 'outside',
-            textfont: { color: '#FFF', size: 11 },
-            cliponaxis: false,
-            customdata: tooltips,
-            hovertemplate: '%{customdata}<extra></extra>',
-        }], getLayout('Top 15 Puestos · Número de Becas Otorgadas por Beneficiario', {
-            xaxis: {
-                title: 'Beneficiarios en el puesto',
-                gridcolor: 'rgba(255,255,255,0.08)',
-                range: [0, maxPct * 1.2],
-            },
-            yaxis: {
-                autorange: 'reversed',
-                tickfont: { size: 11 },
-            },
-            margin: { t: 58, r: 80, b: 58, l: 230 },
-        }), plotConfig);
+        elTopCurps._renderTop = renderTopCurps;
+        const selTC = document.querySelector('[data-chart="chart-top-curps"]');
+        const nTC   = +(selTC?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        renderTopCurps(nTC);
     }
 });

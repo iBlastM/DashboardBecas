@@ -183,32 +183,39 @@ document.addEventListener('datosListos', () => {
             if (d.GENERO_TUTOR === 'MUJER') stats[c].mujeres++;
         });
 
-        const TOP = 20;
-        const ranked = Object.entries(stats)
+        // Pre-calcular ranking completo (invariante respecto a n)
+        const fullRanked = Object.entries(stats)
             .filter(([, v]) => v.total >= 10)
             .map(([k, v]) => ({ colonia: k, pct: (v.mujeres / v.total) * 100, total: v.total }))
-            .sort((a, b) => b.pct - a.pct)
-            .slice(0, TOP);
+            .sort((a, b) => b.pct - a.pct);
 
-        const yLab = ranked.map(r => r.colonia);
-        const xVal = ranked.map(r => +r.pct.toFixed(1));
-        const text = ranked.map(r => r.pct.toFixed(1) + '% (' + r.total.toLocaleString('es-MX') + ')');
+        const renderJefatura = (n) => {
+            const ranked = fullRanked.slice(0, n);
+            const yLab = ranked.map(r => r.colonia);
+            const xVal = ranked.map(r => +r.pct.toFixed(1));
+            const text = ranked.map(r => r.pct.toFixed(1) + '% (' + r.total.toLocaleString('es-MX') + ')');
 
-        Plotly.newPlot(elJF, [{
-            type: 'bar',
-            orientation: 'h',
-            x: xVal,
-            y: yLab,
-            marker: { color: xVal.map(v => v > 70 ? '#EC4899' : v > 55 ? C.naranja : C.verde) },
-            text,
-            textposition: 'outside',
-            textfont: { color: '#FFF', size: 10 },
-            cliponaxis: false,
-            hovertemplate: '<b>%{y}</b><br>Tutoras mujeres: %{x:.1f}%<extra></extra>',
-        }], getLayout('Índice de Jefatura Femenina Estimada · % Tutoras por Colonia (Top 20)', {
-            xaxis: { title: '% Tutoras Mujeres', range: [0, 115] },
-            yaxis: { autorange: 'reversed' },
-            margin: { t: 58, r: 100, b: 58, l: 220 },
-        }), plotConfig);
+            Plotly.newPlot(elJF, [{
+                type: 'bar',
+                orientation: 'h',
+                x: xVal,
+                y: yLab,
+                marker: { color: xVal.map(v => v > 70 ? '#EC4899' : v > 55 ? C.naranja : C.verde) },
+                text,
+                textposition: 'outside',
+                textfont: { color: '#FFF', size: 10 },
+                cliponaxis: false,
+                hovertemplate: '<b>%{y}</b><br>Tutoras mujeres: %{x:.1f}%<extra></extra>',
+            }], getLayout(`Índice de Jefatura Femenina Estimada · % Tutoras por Colonia (Top ${n})`, {
+                xaxis: { title: '% Tutoras Mujeres', range: [0, 115] },
+                yaxis: { autorange: 'reversed' },
+                margin: { t: 58, r: 100, b: 58, l: 220 },
+            }), plotConfig);
+        };
+
+        elJF._renderTop = renderJefatura;
+        const selJF = document.querySelector('[data-chart="chart-jefatura-femenina"]');
+        const nJF   = +(selJF?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        renderJefatura(nJF);
     }
 });
