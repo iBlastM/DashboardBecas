@@ -40,5 +40,5 @@ document.addEventListener('datosListos', () => {
     document.getElementById('kpi-promedio-val').textContent   = '$' + f(promedio,  { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     document.getElementById('kpi-edad-val').textContent       = f(edadProm, { maximumFractionDigits: 1 }) + ' años';
     document.getElementById('kpi-total-becas-val').textContent  = f(totalBecas);
-    document.getElementById('kpi-prom-becas-val').textContent   = f(promBecas, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' becas/persona';
+    document.getElementById('kpi-prom-becas-val').textContent   = f(promBecas, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' becas';
 });
