@@ -4,6 +4,7 @@ BECAS_COMPLETO_LIMPIO.json
 BECAS_COMPLETO_LIMPIO.parquet
 # Archivo original combinado (200 MB) — sustituido por data_a.json + data_b.json
 data_dashboard.json
+base_limpia2.json
 
 # --- Scripts de procesamiento ---
 preprocesar.py
