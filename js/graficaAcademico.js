@@ -80,7 +80,7 @@ document.addEventListener('datosListos', () => {
             textposition: 'outside',
             textfont: { color: '#FFF', size: 11 },
             cliponaxis: false,
-            hovertemplate: '<b>Grado %{x}</b><br>%{y:,} becarios<extra></extra>',
+            hovertemplate: '<b>GRADO %{x}</b><br>%{y:,} becarios<extra></extra>',
         }], getLayout('Beneficiarios por Grado Escolar', {
             xaxis: { title: 'Grado' },
             yaxis: { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },

@@ -60,15 +60,14 @@ document.addEventListener('datosListos', () => {
                 barmode: 'overlay',
                 xaxis:  { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
                 xaxis2: {
-                    title: 'Inversión Total ($)',
                     overlaying: 'x',
                     side: 'top',
                     showgrid: false,
                     tickformat: '$,.0f',
                 },
                 yaxis: { autorange: 'reversed' },
-                margin: { t: 68, r: 80, b: 68, l: 240 },
-                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
+                margin: { t: 78, r: 80, b: 90, l: 240 },
+                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.20 },
             }), plotConfig);
         };
 
@@ -289,15 +288,14 @@ document.addEventListener('datosListos', () => {
                 barmode: 'overlay',
                 xaxis:  { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)', side: 'bottom' },
                 xaxis2: {
-                    title: 'Inversión Total ($)',
                     overlaying: 'x',
                     side: 'top',
                     showgrid: false,
                     tickformat: '$,.0f',
                 },
                 yaxis:  { autorange: 'reversed' },
-                margin: { t: 68, r: 80, b: 68, l: 220 },
-                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
+                margin: { t: 78, r: 80, b: 90, l: 220 },
+                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.20 },
             }), plotConfig);
         };
 
@@ -421,4 +419,308 @@ document.addEventListener('datosListos', () => {
             }
         })();
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 6. Análisis de Proximidad — Distancia alumno ↔ escuela (Haversine)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /** Distancia Haversine en km entre dos puntos. */
+    function haversineKm(lat1, lon1, lat2, lon2) {
+        const R   = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    // Calcular distancias solo para registros con coordenadas completas y delegación válida
+    const conDistRaw = data
+        .filter(d =>
+            d.DELEGACION &&
+            d.LATITUD != null && d.LONGITUD != null &&
+            d.LAT_ESCUELA != null && d.LONG_ESCUELA != null
+        )
+        .map(d => ({
+            ...d,
+            DISTANCIA_KM: haversineKm(d.LATITUD, d.LONGITUD, d.LAT_ESCUELA, d.LONG_ESCUELA),
+        }));
+
+    // Eliminar outliers: distancias por encima del percentil 99 (coordenadas erróneas)
+    const _sortedRaw = conDistRaw.map(d => d.DISTANCIA_KM).sort((a, b) => a - b);
+    const _p99       = _sortedRaw[Math.floor(_sortedRaw.length * 0.99)] ?? Infinity;
+    const conDist    = conDistRaw.filter(d => d.DISTANCIA_KM <= _p99);
+
+    // Quitar estado de carga en los tres contenedores siempre
+    const _proxIds = ['chart-proximidad-histograma', 'chart-proximidad-delegacion', 'chart-proximidad-scatter'];
+    _proxIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('loading');
+    });
+
+    if (!conDist.length) {
+        _proxIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML =
+                '<p style="color:rgba(255,255,255,0.35);padding:2rem;text-align:center;font-size:0.85rem">' +
+                'Sin datos de proximidad para esta selección.</p>';
+        });
+    } else {
+
+    // ── 6a. Histograma de distancias ─────────────────────────────────────
+    const elHIST = document.getElementById('chart-proximidad-histograma');
+    if (elHIST) {
+
+        const dists      = conDist.map(d => d.DISTANCIA_KM);
+        const promGlobal = dists.reduce((a, b) => a + b, 0) / dists.length;
+        const mediana    = [...dists].sort((a, b) => a - b)[Math.floor(dists.length / 2)];
+        const sinMovil   = dists.filter(d => d <= 2).length;
+        const pctSinMovil = ((sinMovil / dists.length) * 100).toFixed(1);
+        const xMax       = Math.ceil(_p99 + 0.5);
+
+        Plotly.newPlot(elHIST, [
+            {
+                type: 'histogram',
+                x: dists,
+                xbins: { start: 0, end: xMax, size: 0.5 },
+                name: 'Beneficiarios',
+                marker: {
+                    color: C.verde,
+                    line: { color: 'rgba(0,0,0,0.25)', width: 0.5 },
+                },
+                hovertemplate: '%{x:.1f}–%{x:.1f} km<br>Beneficiarios: %{y:,}<extra></extra>',
+            },
+        ], getLayout(
+            `Distribución de Distancias Alumno → Escuela · ${pctSinMovil}% recorre ≤ 2 km`,
+            {
+                xaxis: { title: 'Distancia (km)', range: [0, xMax], dtick: Math.max(1, Math.floor(xMax / 15)) },
+                yaxis: { title: 'Beneficiarios' },
+                bargap: 0.05,
+                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.20 },
+                margin: { t: 64, r: 20, b: 80, l: 70 },
+                annotations: [
+                    {
+                        x: 2,
+                        y: 0.01,
+                        xref: 'x',
+                        yref: 'paper',
+                        yanchor: 'bottom',
+                        text: '← zona local (≤ 2 km)',
+                        showarrow: false,
+                        font: { color: 'rgba(255,255,255,0.45)', size: 10 },
+                        xanchor: 'left',
+                    },
+                    {
+                        x: promGlobal,
+                        y: 0.97,
+                        xref: 'x',
+                        yref: 'paper',
+                        text: `Prom. ${promGlobal.toFixed(2)} km`,
+                        showarrow: false,
+                        font: { color: C.naranja, size: 10 },
+                        xanchor: 'left',
+                        bgcolor: 'rgba(0,0,0,0.35)',
+                        borderpad: 3,
+                    },
+                    {
+                        x: mediana,
+                        y: 0.85,
+                        xref: 'x',
+                        yref: 'paper',
+                        text: `Med. ${mediana.toFixed(2)} km`,
+                        showarrow: false,
+                        font: { color: '#a78bfa', size: 10 },
+                        xanchor: 'left',
+                        bgcolor: 'rgba(0,0,0,0.35)',
+                        borderpad: 3,
+                    },
+                ],
+                shapes: [
+                    {
+                        // zona verde ≤ 2 km
+                        type: 'rect',
+                        x0: 0, x1: 2,
+                        y0: 0, y1: 1,
+                        xref: 'x', yref: 'paper',
+                        fillcolor: 'rgba(82,188,163,0.10)',
+                        line: { width: 0 },
+                    },
+                    {
+                        // línea de promedio
+                        type: 'line',
+                        x0: promGlobal, x1: promGlobal,
+                        y0: 0, y1: 1,
+                        xref: 'x', yref: 'paper',
+                        line: { color: C.naranja, width: 2, dash: 'dash' },
+                    },
+                    {
+                        // línea de mediana
+                        type: 'line',
+                        x0: mediana, x1: mediana,
+                        y0: 0, y1: 1,
+                        xref: 'x', yref: 'paper',
+                        line: { color: '#a78bfa', width: 2, dash: 'dot' },
+                    },
+                ],
+            }
+        ), plotConfig);
+    }
+
+    // ── 6b. Distancia promedio por delegación (barras + umbral) ──────────
+    const elDELDIST = document.getElementById('chart-proximidad-delegacion');
+    if (elDELDIST) {
+
+        // Agrupar por delegación (ya excluye sin delegación por el filtro de conDist)
+        const sumDel = {}, cntDel = {}, p75Del = {};
+        conDist.forEach(d => {
+            const del = d.DELEGACION;
+            sumDel[del] = (sumDel[del] || 0) + d.DISTANCIA_KM;
+            cntDel[del] = (cntDel[del] || 0) + 1;
+            if (!p75Del[del]) p75Del[del] = [];
+            p75Del[del].push(d.DISTANCIA_KM);
+        });
+
+        const delegacionesFull = Object.keys(sumDel)
+            .map(del => ({
+                del,
+                prom: sumDel[del] / cntDel[del],
+                cnt:  cntDel[del],
+                p75:  (() => {
+                    const sorted = p75Del[del].sort((a, b) => a - b);
+                    return sorted[Math.floor(sorted.length * 0.75)];
+                })(),
+            }))
+            .sort((a, b) => b.prom - a.prom);
+
+        const promGlobal = conDist.reduce((s, d) => s + d.DISTANCIA_KM, 0) / conDist.length;
+
+        const renderTopDelDist = (n) => {
+            const delegaciones = delegacionesFull.slice(0, n);
+            const labels = delegaciones.map(d => d.del);
+            const proms  = delegaciones.map(d => d.prom);
+            const p75s   = delegaciones.map(d => d.p75);
+            const cnts   = delegaciones.map(d => d.cnt);
+
+            Plotly.newPlot(elDELDIST, [
+                {
+                    type: 'bar',
+                    orientation: 'h',
+                    name: 'Distancia promedio',
+                    x: proms,
+                    y: labels,
+                    marker: {
+                        color: proms.map(p => p > promGlobal ? C.naranja : C.verde),
+                        line: { color: 'rgba(0,0,0,0.2)', width: 0.5 },
+                    },
+                    text: proms.map(p => p.toFixed(2) + ' km'),
+                    textposition: 'outside',
+                    textfont: { color: '#FFF', size: 10 },
+                    cliponaxis: false,
+                    customdata: cnts,
+                    hovertemplate: '<b>%{y}</b><br>Promedio: %{x:.2f} km<br>Beneficiarios: %{customdata:,}<extra></extra>',
+                },
+                {
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'Percentil 75',
+                    x: p75s,
+                    y: labels,
+                    marker: {
+                        color: '#a78bfa',
+                        size: 8,
+                        symbol: 'diamond',
+                        line: { color: '#FFF', width: 1 },
+                    },
+                    hovertemplate: '<b>%{y}</b><br>P75: %{x:.2f} km<extra></extra>',
+                },
+                {
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: `Promedio global (${promGlobal.toFixed(2)} km)`,
+                    x: [promGlobal, promGlobal],
+                    y: [labels[labels.length - 1], labels[0]],
+                    line: { color: '#facc15', width: 2, dash: 'dash' },
+                    hoverinfo: 'skip',
+                },
+            ], getLayout(`Top ${n} Delegaciones — Distancia Promedio Alumno → Escuela`, {
+                xaxis:  { title: { text: 'Distancia (km)', standoff: 18 }, gridcolor: 'rgba(255,255,255,0.08)' },
+                yaxis:  { autorange: 'reversed' },
+                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.24 },
+                margin: { t: 58, r: 80, b: 110, l: 240 },
+                shapes: [{
+                    type: 'line',
+                    x0: 2, x1: 2,
+                    y0: 0, y1: 1,
+                    yref: 'paper',
+                    line: { color: 'rgba(82,188,163,0.4)', width: 1, dash: 'dot' },
+                }],
+            }), plotConfig);
+        };
+
+        elDELDIST._renderTop = renderTopDelDist;
+        const selDELDIST = document.querySelector('[data-chart="chart-proximidad-delegacion"]');
+        const nDELDIST   = +(selDELDIST?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        renderTopDelDist(nDELDIST);
+    }
+
+    // ── 6c. Scatter: distancia vs importe (¿se compensa la movilidad?) ───
+    const elSCATDIST = document.getElementById('chart-proximidad-scatter');
+    if (elSCATDIST) {
+
+        // Agrupar por delegación para mostrar puntos agregados (evita sobreplotting)
+        const delMap = {};
+        conDist.forEach(d => {
+            const del = d.DELEGACION;
+            if (!delMap[del]) delMap[del] = { dists: [], importes: [], cnt: 0 };
+            delMap[del].dists.push(d.DISTANCIA_KM);
+            delMap[del].importes.push(d.IMPORTE);
+            delMap[del].cnt++;
+        });
+
+        const agg = Object.entries(delMap).map(([del, v]) => ({
+            del,
+            distProm: v.dists.reduce((a, b) => a + b, 0) / v.cnt,
+            impProm:  v.importes.reduce((a, b) => a + b, 0) / v.cnt,
+            cnt:      v.cnt,
+        }));
+
+        Plotly.newPlot(elSCATDIST, [{
+            type: 'scatter',
+            mode: 'markers+text',
+            x: agg.map(a => a.distProm),
+            y: agg.map(a => a.impProm),
+            text: agg.map(a => a.del),
+            textposition: 'top center',
+            textfont: { size: 9, color: 'rgba(255,255,255,0.75)' },
+            marker: {
+                size: agg.map(a => Math.max(10, Math.min(45, Math.sqrt(a.cnt) * 2.5))),
+                color: agg.map(a => a.distProm),
+                colorscale: [
+                    [0,   C.verde],
+                    [0.5, C.naranja],
+                    [1,   '#ef4444'],
+                ],
+                showscale: true,
+                colorbar: {
+                    title: { text: 'km prom.', font: { color: '#FFF', size: 10 } },
+                    tickfont: { color: '#FFF', size: 9 },
+                    ticksuffix: ' km',
+                    thickness: 12,
+                },
+                line: { color: 'rgba(255,255,255,0.3)', width: 1 },
+            },
+            customdata: agg.map(a => a.cnt),
+            hovertemplate:
+                '<b>%{text}</b><br>' +
+                'Distancia prom.: %{x:.2f} km<br>' +
+                'Beca prom.: $%{y:,.0f}<br>' +
+                'Beneficiarios: %{customdata:,}<extra></extra>',
+        }], getLayout('Distancia vs Beca Promedio por Delegación', {
+            xaxis: { title: 'Distancia promedio al centro escolar (km)' },
+            yaxis: { title: 'Importe promedio de beca ($)', tickformat: '$,.0f' },
+            margin: { t: 58, r: 30, b: 60, l: 90 },
+        }), plotConfig);
+    }
+    } 
 });

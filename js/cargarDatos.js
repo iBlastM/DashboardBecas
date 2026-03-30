@@ -41,6 +41,10 @@ async function cargarDatos() {
             d.SECCION_ELECTORAL  = d.SECCION_ELECTORAL  != null ? Number(d.SECCION_ELECTORAL)  : null;
             d.DISTRITO_FEDERAL   = d.DISTRITO_FEDERAL   != null ? Number(d.DISTRITO_FEDERAL)   : null;
             d.DISTRITO_LOCAL     = d.DISTRITO_LOCAL     != null ? Number(d.DISTRITO_LOCAL)      : null;
+            d.LATITUD            = d.LATITUD     != null ? Number(d.LATITUD)     : null;
+            d.LONGITUD           = d.LONGITUD    != null ? Number(d.LONGITUD)    : null;
+            d.LAT_ESCUELA        = d.LAT_ESCUELA != null ? Number(d.LAT_ESCUELA) : null;
+            d.LONG_ESCUELA       = d.LONG_ESCUELA!= null ? Number(d.LONG_ESCUELA): null;
 
             // Asegurar que los campos de agregación sean arrays
             if (!Array.isArray(d.AÑOS))     d.AÑOS     = d.AÑO     ? [Number(d.AÑO)]  : [];

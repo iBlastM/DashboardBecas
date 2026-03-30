@@ -256,15 +256,14 @@ document.addEventListener('datosListos', () => {
                 barmode: 'overlay',
                 xaxis:  { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
                 xaxis2: {
-                    title: 'Inversión Total ($)',
                     overlaying: 'x',
                     side: 'top',
                     showgrid: false,
                     tickformat: '$,.0f',
                 },
                 yaxis:  { autorange: 'reversed' },
-                margin: { t: 68, r: 80, b: 68, l: 110 },
-                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
+                margin: { t: 78, r: 80, b: 90, l: 110 },
+                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.20 },
             }), plotConfig);
         };
 
@@ -326,14 +325,13 @@ document.addEventListener('datosListos', () => {
                 barmode: 'overlay',
                 xaxis:  { title: 'Inversión Total ($)', tickformat: '$,.0f', gridcolor: 'rgba(255,255,255,0.08)' },
                 xaxis2: {
-                    title: 'Beneficiarios',
                     overlaying: 'x',
                     side: 'top',
                     showgrid: false,
                 },
                 yaxis:  { autorange: 'reversed' },
-                margin: { t: 68, r: 80, b: 68, l: 110 },
-                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
+                margin: { t: 78, r: 80, b: 90, l: 110 },
+                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.20 },
             }), plotConfig);
         };
 

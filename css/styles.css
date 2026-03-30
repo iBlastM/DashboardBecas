@@ -116,6 +116,17 @@ body {
     border-bottom: 1px solid var(--border);
 }
 
+.section-subtitle {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-2);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin: 1.6rem 0 0.9rem;
+    opacity: 0.75;
+}
+
 /* ── KPI GRID ─────────────────────────────────────────────────────────────── */
 .kpi-grid {
     display: grid;
@@ -586,9 +597,22 @@ body {
 .page-nav {
     display: flex;
     gap: 0.4rem;
-    margin-left: auto;
     flex-shrink: 0;
 }
+
+/* ── ESCUDO (right side of top bar) ─────────────────────────────────────── */
+.brand-escudo {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+    margin-left: auto;
+    filter: drop-shadow(0 1px 4px rgba(0,0,0,0.4));
+}
+
+/* ── THEME-AWARE LOGO ────────────────────────────────────────────────────── */
+[data-theme="dark"] .brand-img-light { display: none; }
+[data-theme="light"] .brand-img-dark { display: none; }
 
 .page-nav-btn {
     background: transparent;

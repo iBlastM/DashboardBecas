@@ -20,16 +20,18 @@
 <!-- ── TOP BAR ──────────────────────────────────────────────────────────── -->
 <header class="top-bar">
     <div class="top-bar-inner">
-        <div class="brand-logo" aria-label="Metrix">
-            <img src="images/logo.png" alt="Metrix" class="brand-img">
-        </div>
-        <div class="brand-divider"></div>
-        <h1 class="dashboard-title">Becas 2021-2025</h1>
         <nav class="page-nav" aria-label="Cambiar vista">
             <a href="solicitantes.html" class="page-nav-btn">Solicitantes</a>
             <a href="index.html" class="page-nav-btn active">Beneficiarios</a>
         </nav>
         <button id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar a modo claro">☀</button>
+        <div class="brand-divider"></div>
+        <div class="brand-logo" aria-label="Metrix">
+            <img src="images/logo.png" alt="Metrix" class="brand-img brand-img-dark">
+            <img src="images/logoBlanco.png" alt="Metrix" class="brand-img brand-img-light">
+        </div>
+        <h1 class="dashboard-title">Análisis Becas, Municipio de Corregidora 2020-2025</h1>
+        <img src="images/heraldica-para-pag-web-01_180x180px.png" alt="Escudo de Corregidora" class="brand-escudo">
     </div>
 </header>
 
@@ -73,6 +75,7 @@
             <div class="ms-wrap" id="ms-anio">
                 <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
                 <div class="ms-panel" hidden>
+                    <label class="ms-opt"><input type="checkbox" value="2020"> 2020</label>
                     <label class="ms-opt"><input type="checkbox" value="2021"> 2021</label>
                     <label class="ms-opt"><input type="checkbox" value="2022"> 2022</label>
                     <label class="ms-opt"><input type="checkbox" value="2023"> 2023</label>
@@ -89,7 +92,7 @@
                 <div class="ms-panel" hidden>
                     <label class="ms-opt" data-etapa="E1"><input type="checkbox" value="1RA ETAPA"> 1ª Etapa</label>
                     <label class="ms-opt" data-etapa="E2"><input type="checkbox" value="2DA ETAPA"> 2ª Etapa</label>
-                    <label class="ms-opt" data-etapa="EX"><input type="checkbox" value="EXTRAORDINARIA"> Extraordinaria</label>
+                    <label class="ms-opt" data-etapa="EX"><input type="checkbox" value="EXTRATEMPORANEA"> Extraordinaria</label>
                 </div>
             </div>
         </div>
@@ -161,7 +164,7 @@
 <!-- ── FOOTER ────────────────────────────────────────────────────────────── -->
 <footer class="footer">
     <span>Becas Académicas 2021-2025 · Gobierno de Querétaro</span>
-    <span>Fuente: BECAS_COMPLETO_LIMPIO.json · Procesado con preprocesar.py</span>
+    <span>Fuente: BECAS_COMPLETO v3.xlsx</span>
 </footer>
 
 <!-- ── SCRIPTS ────────────────────────────────────────────────────────────

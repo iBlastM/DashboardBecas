@@ -110,7 +110,7 @@ document.addEventListener('datosListos', () => {
             textposition: 'outside',
             textfont: { color: '#FFF', size: 11 },
             cliponaxis: false,
-            hovertemplate: '<b>%{x} años</b><br>%{y:,} tutores<extra></extra>',
+            hovertemplate: '<b>%{x} AÑOS</b><br>%{y:,} tutores<extra></extra>',
         }], getLayout('Rangos de Edad del Tutor', {
             xaxis: { title: 'Rango de Edad' },
             yaxis: { title: 'Tutores', gridcolor: 'rgba(255,255,255,0.08)' },
@@ -146,7 +146,7 @@ document.addEventListener('datosListos', () => {
             textposition: 'outside',
             textfont: { color: '#FFF', size: 11 },
             cliponaxis: false,
-            hovertemplate: '<b>Brecha %{x} años</b><br>%{y:,} casos<extra></extra>',
+            hovertemplate: '<b>BRECHA %{x} AÑOS</b><br>%{y:,} casos<extra></extra>',
         }], getLayout(`Brecha Generacional · Promedio: ${avgBrecha} años`, {
             xaxis: { title: 'Diferencia de edad (tutor − alumno, años)' },
             yaxis: { title: 'N° de casos', gridcolor: 'rgba(255,255,255,0.08)' },

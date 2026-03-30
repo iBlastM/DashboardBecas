@@ -179,8 +179,8 @@ document.addEventListener('datosListos', () => {
                 showgrid: false,
                 zeroline: true, zerolinecolor: 'rgba(255,255,255,0.3)',
             },
-            margin: { t: 58, r: 80, b: 68, l: 72 },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.2 },
+            margin: { t: 58, r: 80, b: 115, l: 72 },
+            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.32 },
         }), plotConfig);
     }
 
@@ -259,7 +259,7 @@ document.addEventListener('datosListos', () => {
                 textposition: 'outside',
                 textfont: { color: '#FFF', size: 10 },
                 cliponaxis: false,
-                hovertemplate: '<b>%{x}</b> · ' + tipo + '<br>%{y:,} becas<extra></extra>',
+                hovertemplate: '<b>%{x} · ' + tipo + '</b><br>%{y:,} becas<extra></extra>',
             };
         });
 
@@ -267,8 +267,8 @@ document.addEventListener('datosListos', () => {
             barmode: 'group',
             xaxis: { type: 'category', title: 'Periodo' },
             yaxis: { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
-            margin: { t: 58, r: 18, b: 68, l: 72 },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.22 },
+            margin: { t: 58, r: 18, b: 90, l: 72 },
+            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.28 },
         }), plotConfig);
     }
 
@@ -315,7 +315,7 @@ document.addEventListener('datosListos', () => {
                 textposition: 'inside',
                 insidetextanchor: 'middle',
                 textfont: { color: '#FFF', size: 10 },
-                hovertemplate: '<b>%{x}</b> · ' + tipo + '<br>%{y:.1f}%<extra></extra>',
+                hovertemplate: '<b>%{x} · ' + tipo + '</b><br>%{y:.1f}%<extra></extra>',
             };
         });
 
@@ -328,8 +328,8 @@ document.addEventListener('datosListos', () => {
                 range: [0, 105],
                 ticksuffix: '%',
             },
-            margin: { t: 58, r: 18, b: 68, l: 72 },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.22 },
+            margin: { t: 58, r: 18, b: 90, l: 72 },
+            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.28 },
         }), plotConfig);
     }
 });

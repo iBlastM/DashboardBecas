@@ -27,14 +27,16 @@ Nota: el archivo de origen pesa ~1 GB; el proceso tarda varios minutos.
 """
 
 import json
+import math
 import pathlib
+import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-SRC = ROOT / "base_limpia.json"
+SRC = ROOT / "base_limpia2.json"
 DST = ROOT / "data_solicitantes.json"
 
-ANIOS_OK = {2021, 2022, 2023, 2024, 2025}
+ANIOS_OK = {2020, 2021, 2022, 2023, 2024, 2025}
 
 
 def derivar_genero_tutor(curp: str) -> str:
@@ -63,6 +65,43 @@ def _int_or_none(v):
         return None
 
 
+def _sanitize(obj):
+    """Recursively replace float NaN with None so json.dumps outputs null."""
+    if isinstance(obj, float) and math.isnan(obj):
+        return None
+    if isinstance(obj, dict):
+        return {k: _sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize(v) for v in obj]
+    return obj
+
+
+def _extraer_anio(d: dict):
+    """Extrae el año del programa desde ANIO_PROGRAMA, NOMBRE_PROGRAMA/PROGRAMA
+    o FECHA_REGISTRO (en ese orden de prioridad)."""
+    anio_raw = d.get("ANIO_PROGRAMA")
+    if anio_raw is not None:
+        try:
+            return int(anio_raw)
+        except (TypeError, ValueError):
+            pass
+
+    for campo in ("PROGRAMA", "NOMBRE_PROGRAMA"):
+        val = d.get(campo)
+        if val:
+            m = re.search(r"(20\d{2})", str(val))
+            if m:
+                return int(m.group(1))
+
+    fecha = d.get("FECHA_REGISTRO") or d.get("FECHA REGISTRO")
+    if fecha is not None:
+        m = re.search(r"(20\d{2})", str(fecha))
+        if m:
+            return int(m.group(1))
+
+    return None
+
+
 def main() -> None:
     if not SRC.exists():
         sys.exit(f"ERROR: no se encontró {SRC}")
@@ -88,11 +127,7 @@ def main() -> None:
                 continue
 
             # Filtro por año (sin filtrar por status)
-            anio_raw = d.get("ANIO_PROGRAMA")
-            try:
-                anio = int(anio_raw) if anio_raw is not None else None
-            except (TypeError, ValueError):
-                anio = None
+            anio = _extraer_anio(d)
 
             if anio not in ANIOS_OK:
                 omitidos += 1
@@ -137,6 +172,8 @@ def main() -> None:
                 "DELEGACION":        (d.get("DELEGACION") or ""),
                 "LATITUD":           d.get("LATITUD"),
                 "LONGITUD":          d.get("LONGITUD"),
+                "LAT_ESCUELA":       d.get("LAT_ESCUELA"),
+                "LONG_ESCUELA":      d.get("LONG_ESCUELA"),
                 "SECCION_ELECTORAL": _int_or_none(
                     d.get("SECCION_ELECTORAL_2025") or d.get("SECCION_ELECTORAL_2024")
                 ),
@@ -152,17 +189,21 @@ def main() -> None:
 
             if curp not in curp_map:
                 curp_map[curp] = {
-                    "latest_anio":    anio,
-                    "latest_rec":     rep,
-                    "becas":          [beca_det] if es_aprobado else [],
-                    "solicitudes":    1,
-                    "es_beneficiario": es_aprobado,
+                    "latest_anio":       anio,
+                    "latest_rec":        rep,
+                    "becas":             [beca_det] if es_aprobado else [],
+                    "periodos_vistos":   {periodo},          # dedup TOTAL_SOLICITUDES
+                    "periodos_aprobados": {periodo} if es_aprobado else set(),  # dedup becas[]
+                    "es_beneficiario":   es_aprobado,
                 }
             else:
                 entry = curp_map[curp]
-                entry["solicitudes"] += 1
-                if es_aprobado:
+                # Contar solicitud solo si es un PERIODO nuevo (evita duplicados)
+                if periodo not in entry["periodos_vistos"]:
+                    entry["periodos_vistos"].add(periodo)
+                if es_aprobado and periodo not in entry["periodos_aprobados"]:
                     entry["becas"].append(beca_det)
+                    entry["periodos_aprobados"].add(periodo)
                     entry["es_beneficiario"] = True
                 if anio > entry["latest_anio"]:
                     entry["latest_anio"] = anio
@@ -186,7 +227,7 @@ def main() -> None:
                 **latest,
                 "CURP":              curp,
                 "ES_BENEFICIARIO":   entry["es_beneficiario"],
-                "TOTAL_SOLICITUDES": entry["solicitudes"],
+                "TOTAL_SOLICITUDES": len(entry["periodos_vistos"]),
                 "NUM_BECAS":         len(becas),
                 "IMPORTE":           sum(b["IMPORTE"] for b in becas),
                 "AÑOS":              años,
@@ -194,7 +235,7 @@ def main() -> None:
                 "BECAS":             becas,
             }
 
-            fout.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            fout.write(json.dumps(_sanitize(rec), ensure_ascii=False) + "\n")
             written += 1
 
             if written % 10_000 == 0:

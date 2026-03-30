@@ -11,7 +11,7 @@ async function cargarPartials() {
 
     const htmls = await Promise.all(
         tabs.map(t =>
-            fetch(t.src)
+            fetch(t.src, { cache: 'no-store' })
                 .then(r => {
                     if (!r.ok) throw new Error(`HTTP ${r.status} — ${t.src}`);
                     return r.text();

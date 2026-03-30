@@ -3,9 +3,7 @@
 Divide data_dashboard.json en dos archivos para cumplir el límite de 100 MB/archivo de GitHub:
 
   data_a.json — datos demográficos, académicos, económicos, filtros y becas
-  data_b.json — escuela + territorial + familiar + electoral
-
-Elimina MUNICIPIO, LATITUD y LONGITUD (no se usan en ninguna gráfica).
+  data_b.json — escuela + territorial + familiar + electoral + coordenadas proximidad
 
 Los campos NUM_BECAS, AÑOS, PERIODOS y BECAS (agregados por beneficiario único)
 se incluyen en data_a.json.
@@ -24,17 +22,20 @@ DST_A = ROOT / "data_a.json"
 DST_B = ROOT / "data_b.json"
 
 # Columnas para cada archivo
-# (LATITUD y LONGITUD se descartan — MUNICIPIO va en data_b para el filtro)
 COLS_A = ["CURP", "GENERO", "EDAD", "COLONIA", "SECTOR", "NIVEL_EDUCATIVO",
           "GRADO", "AÑO", "ETAPA", "TIPO_BECA", "IMPORTE",
           "NUM_BECAS", "AÑOS", "PERIODOS", "BECAS"]
 
 COLS_B = ["MUNICIPIO", "MUNICIPIO_ESCUELA", "ESCUELA", "DELEGACION", "EDAD_TUTOR", "GENERO_TUTOR",
-          "SECCION_ELECTORAL", "DISTRITO_FEDERAL", "DISTRITO_LOCAL"]
+          "SECCION_ELECTORAL", "DISTRITO_FEDERAL", "DISTRITO_LOCAL",
+          "LATITUD", "LONGITUD", "LAT_ESCUELA", "LONG_ESCUELA"]
 
 # Campos numéricos: se convierten a int cuando el valor es entero (17.0 → 17)
 INT_FIELDS = {"EDAD", "GRADO", "AÑO", "IMPORTE", "NUM_BECAS", "EDAD_TUTOR",
               "SECCION_ELECTORAL", "DISTRITO_FEDERAL", "DISTRITO_LOCAL"}
+
+# Campos de coordenadas — se mantienen como float
+FLOAT_FIELDS = {"LATITUD", "LONGITUD", "LAT_ESCUELA", "LONG_ESCUELA"}
 
 # Campos que son listas/objetos — se copian tal cual sin conversión numérica
 LIST_FIELDS = {"AÑOS", "PERIODOS", "BECAS"}
@@ -48,6 +49,12 @@ def compact(rec: dict, cols: list) -> dict:
         if k in LIST_FIELDS:
             # Listas y objetos se copian sin modificar
             out[k] = v if v is not None else []
+        elif k in FLOAT_FIELDS:
+            # Coordenadas: se mantienen como float o null
+            try:
+                out[k] = float(v) if v is not None else None
+            except (TypeError, ValueError):
+                out[k] = None
         elif k in INT_FIELDS and v is not None:
             try:
                 vi = int(v)

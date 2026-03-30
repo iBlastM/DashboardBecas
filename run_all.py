@@ -43,22 +43,29 @@ def main() -> None:
     print("=" * 60)
 
     pasos = [
+        # ── Enriquecer base con coordenadas de escuelas ───────────────
+        ("coordenadas_escuelas.py",
+         "[0/6] Coordenadas: Escuelas_Editar.xlsx → base_limpia2.json"),
+
         # ── Vista Beneficiarios (index.html) ─────────────────────────
         ("preprocesar.py",
-         "[1/5] Beneficiarios: base_limpia.json → data_dashboard.json"),
+         "[1/6] Beneficiarios: base_limpia.json → data_dashboard.json"),
 
         ("asignacion_municipios.py",
-         "[2/5] Beneficiarios: asignar municipios por spatial join"),
+         "[2/6] Beneficiarios: asignar municipios por spatial join"),
 
         ("split_data.py",
-         "[3/5] Beneficiarios: data_dashboard.json → data_a.json + data_b.json"),
+         "[3/6] Beneficiarios: data_dashboard.json → data_a.json + data_b.json"),
 
         # ── Vista Solicitantes (solicitantes.html) ────────────────────
         ("preprocesar_solicitantes.py",
-         "[4/5] Solicitantes: base_limpia.json → data_solicitantes.json"),
+         "[4/6] Solicitantes: base_limpia.json → data_solicitantes.json"),
+
+        ("asignacion_municipios_solicitantes.py",
+         "[5/6] Solicitantes: asignar municipios por spatial join"),
 
         ("split_solicitantes.py",
-         "[5/5] Solicitantes: data_solicitantes.json → data_sol_a.json + data_sol_b.json"),
+         "[6/6] Solicitantes: data_solicitantes.json → data_sol_a.json + data_sol_b.json"),
     ]
 
     t_total = time.time()

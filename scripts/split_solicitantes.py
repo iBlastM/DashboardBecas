@@ -14,6 +14,7 @@ Uso:
 """
 
 import json
+import math
 import pathlib
 
 ROOT  = pathlib.Path(__file__).resolve().parent.parent
@@ -27,13 +28,17 @@ COLS_A = ["CURP", "GENERO", "EDAD", "COLONIA", "SECTOR", "NIVEL_EDUCATIVO",
           "STATUS", "ES_BENEFICIARIO", "TOTAL_SOLICITUDES"]
 
 COLS_B = ["MUNICIPIO", "ESCUELA", "DELEGACION", "EDAD_TUTOR", "GENERO_TUTOR",
-          "SECCION_ELECTORAL", "DISTRITO_FEDERAL", "DISTRITO_LOCAL"]
+          "SECCION_ELECTORAL", "DISTRITO_FEDERAL", "DISTRITO_LOCAL",
+          "LATITUD", "LONGITUD", "LAT_ESCUELA", "LONG_ESCUELA"]
 
 INT_FIELDS = {"EDAD", "GRADO", "AÑO", "IMPORTE", "NUM_BECAS", "EDAD_TUTOR",
               "SECCION_ELECTORAL", "DISTRITO_FEDERAL", "DISTRITO_LOCAL",
               "TOTAL_SOLICITUDES"}
 
 LIST_FIELDS = {"AÑOS", "PERIODOS", "BECAS"}
+
+# Campos de coordenadas — se mantienen como float
+FLOAT_FIELDS = {"LATITUD", "LONGITUD", "LAT_ESCUELA", "LONG_ESCUELA"}
 
 
 def compact(rec: dict, cols: list) -> dict:
@@ -44,12 +49,20 @@ def compact(rec: dict, cols: list) -> dict:
             out[k] = v if v is not None else []
         elif k == "ES_BENEFICIARIO":
             out[k] = bool(v)
-        elif k in INT_FIELDS and v is not None:
+        elif k in FLOAT_FIELDS:
             try:
-                vi = int(v)
-                out[k] = vi if float(vi) == float(v) else v
+                out[k] = float(v) if v is not None else None
             except (TypeError, ValueError):
-                out[k] = v
+                out[k] = None
+        elif k in INT_FIELDS and v is not None:
+            if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
+                out[k] = None
+            else:
+                try:
+                    vi = int(v)
+                    out[k] = vi if float(vi) == float(v) else v
+                except (TypeError, ValueError):
+                    out[k] = v
         else:
             out[k] = v
     return out

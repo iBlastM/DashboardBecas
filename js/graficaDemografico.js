@@ -99,7 +99,7 @@ document.addEventListener('datosListos', () => {
             text: sectores.map(s => data.filter(d => d.SECTOR === s && d.GENERO === g).length.toLocaleString('es-MX')),
             textposition: 'outside',
             textfont: { color: '#FFF', size: 11 },
-            hovertemplate: '<b>%{x}</b> · ' + g + '<br>%{y:,} becarios<extra></extra>',
+            hovertemplate: '<b>%{x} · ' + g + '</b><br>%{y:,} becarios<extra></extra>',
         }));
         Plotly.newPlot(elGS, traces, getLayout('Género por Sector', {
             barmode: 'group',
@@ -157,8 +157,8 @@ document.addEventListener('datosListos', () => {
                 zerolinewidth: 2,
             },
             yaxis: { title: 'Rango de Edad' },
-            margin: { t: 58, r: 80, b: 48, l: 60 },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12 },
+            margin: { t: 58, r: 80, b: 84, l: 60 },
+            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.22 },
         }), plotConfig);
     }
 
@@ -252,27 +252,25 @@ document.addEventListener('datosListos', () => {
     if (elTopCurps) {
         elTopCurps.classList.remove('loading');
 
-        // Agrupar beneficiarios por NUM_BECAS (invariante respecto a n)
+        // Cada fila es un beneficiario único; NUM_BECAS = total de becas recibidas.
+        // Agrupamos por valor de NUM_BECAS: cada "puesto" = todos los beneficiarios
+        // que recibieron exactamente esa cantidad de becas.
+        const MAX_CURPS_TOOLTIP = 30;
         const grupos = {};
-        data.filter(d => d.CURP && d.NUM_BECAS > 0).forEach(d => {
+        data.filter(d => d.NUM_BECAS > 0).forEach(d => {
             const k = d.NUM_BECAS;
-            if (!grupos[k]) grupos[k] = [];
-            grupos[k].push(d.CURP);
+            if (!grupos[k]) grupos[k] = { curps: [], importeTotal: 0 };
+            if (d.CURP) grupos[k].curps.push(d.CURP);
+            grupos[k].importeTotal += (d.IMPORTE || 0);
         });
         const todasClaves = Object.keys(grupos).map(Number).sort((a, b) => b - a);
-
-        const MAX_CURPS_TOOLTIP = 30;
 
         const renderTopCurps = (n) => {
             const puestos = todasClaves.slice(0, n);
 
-            const etiquetas = puestos.map((nb, i) => {
-                const cnt = grupos[nb].length;
-                return `#${i + 1} · ${nb} becas  (${cnt.toLocaleString('es-MX')} benef.)`;
-            });
-
-            const cantidades = puestos.map(nb => grupos[nb].length);
-            const maxPct = Math.max(...cantidades, 1);
+            const etiquetas  = puestos.map((nb, i) => `#${i + 1} · ${nb} becas  (${grupos[nb].curps.length.toLocaleString('es-MX')} benef.)`);
+            const cantidades = puestos.map(nb => grupos[nb].curps.length);
+            const maxVal     = Math.max(...cantidades, 1);
 
             const coloresTop = puestos.map((_, i) => {
                 const t = i / Math.max(puestos.length - 1, 1);
@@ -283,12 +281,16 @@ document.addEventListener('datosListos', () => {
             });
 
             const tooltips = puestos.map((nb, i) => {
-                const lista   = grupos[nb];
-                const mostrar = lista.slice(0, MAX_CURPS_TOOLTIP);
-                const extras  = lista.length - mostrar.length;
+                const g          = grupos[nb];
+                const cnt        = g.curps.length;
+                const mostrar    = g.curps.slice(0, MAX_CURPS_TOOLTIP);
+                const extras     = cnt - mostrar.length;
+                const promImporte = cnt > 0
+                    ? (g.importeTotal / cnt).toLocaleString('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 })
+                    : '$0';
                 return (
-                    `<b>Puesto #${i + 1} · ${nb} becas</b><br>` +
-                    `${lista.length.toLocaleString('es-MX')} beneficiarios<br>` +
+                    `<b>PUESTO #${i + 1} · ${nb} BECAS</b><br>` +
+                    `${cnt.toLocaleString('es-MX')} beneficiarios · Importe prom: ${promImporte}<br>` +
                     `<br><b>CURPs:</b><br>` +
                     mostrar.join('<br>') +
                     (extras > 0 ? `<br><i>… y ${extras} más</i>` : '')
@@ -314,7 +316,7 @@ document.addEventListener('datosListos', () => {
                 xaxis: {
                     title: 'Beneficiarios en el puesto',
                     gridcolor: 'rgba(255,255,255,0.08)',
-                    range: [0, maxPct * 1.2],
+                    range: [0, maxVal * 1.2],
                 },
                 yaxis: {
                     autorange: 'reversed',

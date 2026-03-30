@@ -56,12 +56,28 @@
     </div>
 </div>
 
-<!-- Análisis de Proximidad — placeholder (requiere geo escuelas) -->
-<div class="placeholder-section">
-    <div class="placeholder-card placeholder-wide">
-        <span class="placeholder-icon">📍</span>
-        <h3>Análisis de Proximidad</h3>
-        <p>Próximamente — requiere la base de datos de ubicación de escuelas para calcular la distancia promedio
-        entre la colonia del alumno y su escuela. Identificará si existe "movilidad forzada" en el municipio.</p>
+<!-- Análisis de Proximidad — Distancia alumno ↔ escuela -->
+<h3 class="section-subtitle">Análisis de Proximidad</h3>
+
+<!-- Histograma de distancias (ancho completo) -->
+<div class="charts-grid cols-1">
+    <div class="chart-card">
+        <div id="chart-proximidad-histograma" class="chart-container chart-xl"></div>
+    </div>
+</div>
+
+<!-- Promedio por delegación + Scatter distancia vs beca -->
+<div class="charts-grid cols-2">
+    <div class="chart-card">
+        <div class="top-selector" data-chart="chart-proximidad-delegacion">
+            <span class="top-selector-label">Mostrar:</span>
+            <button class="top-btn" data-n="5">Top 5</button>
+            <button class="top-btn" data-n="10">Top 10</button>
+            <button class="top-btn active" data-n="15">Top 15</button>
+        </div>
+        <div id="chart-proximidad-delegacion" class="chart-container chart-xl"></div>
+    </div>
+    <div class="chart-card">
+        <div id="chart-proximidad-scatter" class="chart-container chart-xl"></div>
     </div>
 </div>

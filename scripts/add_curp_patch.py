@@ -19,7 +19,7 @@ SRC_BASE = ROOT / "base_limpia.json"
 DST_DASH = ROOT / "data_dashboard.json"
 TMP_PATCHED = ROOT / "data_dashboard_curp_tmp.json"
 
-ANIOS_OK = {2021, 2022, 2023, 2024, 2025}
+ANIOS_OK = {2020, 2021, 2022, 2023, 2024, 2025}
 
 
 def main() -> None:

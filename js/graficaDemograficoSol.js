@@ -37,7 +37,7 @@ document.addEventListener('datosListos', () => {
             x: labels,
             y: aprobados,
             marker: { color: C.verde },
-            hovertemplate: '<b>%{x} solicitud(es)</b><br>Aprobados: %{y:,}<extra></extra>',
+            hovertemplate: '<b>%{x} SOLICITUD(ES)</b><br>Aprobados: %{y:,}<extra></extra>',
         },
         {
             type: 'bar',
@@ -45,7 +45,7 @@ document.addEventListener('datosListos', () => {
             x: labels,
             y: noAprobados,
             marker: { color: '#EF4444' },
-            hovertemplate: '<b>%{x} solicitud(es)</b><br>Nunca aprobados: %{y:,}<extra></extra>',
+            hovertemplate: '<b>%{x} SOLICITUD(ES)</b><br>Nunca aprobados: %{y:,}<extra></extra>',
         },
         // Tasa de aprobación flotante sobre cada columna
         {

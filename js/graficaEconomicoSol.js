@@ -53,7 +53,7 @@ document.addEventListener('datosListos', () => {
                 type: 'bar', name: 'No Aprobados',
                 x: cats, y: rechazados,
                 marker: { color: '#EF4444' },
-                hovertemplate: '<b>%{x}</b><br>No Aprobados: %{y:,}<extra></extra>',
+                hovertemplate: '<b>%{x}</b><br>No aprobados: %{y:,}<extra></extra>',
             },
             {
                 type: 'scatter', mode: 'text',
@@ -355,7 +355,7 @@ document.addEventListener('datosListos', () => {
                         })),
                         hovertemplate:
                             '<b>%{y}</b><br>' +
-                            'Solicitudes no aprobadas: <b>%{x}</b><br>' +
+                            'Solicitudes no aprobadas: %{x}<br>' +
                             'Total solicitudes: %{customdata.total}<br>' +
                             'Becas aprobadas: %{customdata.becas}<br>' +
                             'Nivel: %{customdata.nivel}<br>' +
@@ -422,7 +422,7 @@ document.addEventListener('datosListos', () => {
             textposition: 'outside',
             textfont: { color: '#FFF', size: 10 },
             cliponaxis: false,
-            hovertemplate: '<b>%{x} intentos</b><br>%{y:,} sin aprobación<extra></extra>',
+            hovertemplate: '<b>%{x} INTENTOS</b><br>%{y:,} sin aprobación<extra></extra>',
         }], getLayout('Riesgo de Abandono · Nunca Aprobados por Nº de Intentos', {
             xaxis: { title: 'Intentos acumulados (sin aprobación)' },
             yaxis: {

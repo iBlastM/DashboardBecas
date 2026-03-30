@@ -58,7 +58,7 @@ document.addEventListener('datosListos', () => {
                 type: 'bar', name: 'No Aprobados',
                 x: aniosPresentes, y: noAprobados,
                 marker: { color: '#EF4444' },
-                hovertemplate: '<b>%{x}</b><br>No Aprobados: %{y:,}<extra></extra>',
+                hovertemplate: '<b>%{x}</b><br>No aprobados: %{y:,}<extra></extra>',
             },
             // Tasa de aprobación flotante sobre cada columna
             {

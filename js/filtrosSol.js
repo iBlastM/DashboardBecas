@@ -7,8 +7,16 @@
 (function () {
     let _debounce = null;
 
-    // Años que sólo tienen datos de Etapa Extraordinaria
-    const SOLO_EX = new Set(['2021', '2024']);
+    // Años que sólo tienen datos de 1ª Etapa
+    const SOLO_E1 = new Set(['2021', '2024']);
+
+    // Municipios canónicos; cualquier otro se agrupa como 'Otro'
+    const MUNICIPIOS_FIJOS = ['Corregidora', 'El Marqués', 'Huimilpan', 'Querétaro'];
+    function normalizarMunicipio(m) {
+        if (!m) return 'Otro';
+        const found = MUNICIPIOS_FIJOS.find(f => f.toLowerCase() === m.trim().toLowerCase());
+        return found || 'Otro';
+    }
 
     // ── Obtener valores seleccionados en un ms-wrap ──────────────────────────
     function getSelected(wrapId) {
@@ -77,12 +85,12 @@
         const wrap = document.getElementById('ms-etapa');
         if (!wrap) return;
 
-        const tieneE1E2 = aniosSeleccionados.length === 0
-            || aniosSeleccionados.some(a => !SOLO_EX.has(a));
+        const soloE1 = aniosSeleccionados.length > 0
+            && aniosSeleccionados.every(a => SOLO_E1.has(a));
 
-        wrap.querySelectorAll('.ms-opt[data-etapa="E1"], .ms-opt[data-etapa="E2"]')
+        wrap.querySelectorAll('.ms-opt[data-etapa="E2"], .ms-opt[data-etapa="EX"]')
             .forEach(opt => {
-                if (!tieneE1E2) {
+                if (soloE1) {
                     opt.classList.add('ms-disabled');
                     opt.querySelector('input').checked = false;
                 } else {
@@ -106,7 +114,8 @@
             cb.type  = 'checkbox';
             cb.value = s;
             lbl.appendChild(cb);
-            lbl.append(' ' + s);
+            const label = s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+            lbl.append(' ' + label);
             panel.appendChild(lbl);
         });
         panel.addEventListener('change', () => {
@@ -136,16 +145,15 @@
     function poblarMunicipios(data) {
         const panel = document.querySelector('#ms-municipio .ms-panel');
         if (!panel) return;
-        const municipios = [...new Set(data.map(d => d.MUNICIPIO))].filter(Boolean).sort();
         panel.innerHTML = '';
-        municipios.forEach(m => {
+        [...MUNICIPIOS_FIJOS, 'Otro'].forEach(m => {
             const lbl = document.createElement('label');
             lbl.className = 'ms-opt';
             const cb = document.createElement('input');
             cb.type  = 'checkbox';
             cb.value = m;
             lbl.appendChild(cb);
-            lbl.append(' ' + m.charAt(0).toUpperCase() + m.slice(1).toLowerCase());
+            lbl.append(' ' + m);
             panel.appendChild(lbl);
         });
         panel.addEventListener('change', () => {
@@ -229,16 +237,13 @@
 
         let filtered = window.dashDataFull;
 
-        // Filtro por Registro (Beneficiarios / No Beneficiarios)
+        // Filtro por Registro (Solicitantes = todos / Beneficiarios)
         if (registro.length) {
-            const soloBenef  = registro.includes('BENEFICIARIOS')  && !registro.includes('NO_BENEFICIARIOS');
-            const soloNoB    = registro.includes('NO_BENEFICIARIOS') && !registro.includes('BENEFICIARIOS');
+            const soloBenef = registro.includes('BENEFICIARIOS') && !registro.includes('SOLICITANTES');
             if (soloBenef) {
                 filtered = filtered.filter(d => d.ES_BENEFICIARIO === true);
-            } else if (soloNoB) {
-                filtered = filtered.filter(d => d.ES_BENEFICIARIO !== true);
             }
-            // ambos seleccionados = todos → sin filtro adicional
+            // SOLICITANTES seleccionado o ambos = todos → sin filtro adicional
         }
 
         // Filtro por Estatus
@@ -262,7 +267,7 @@
                 ? d.BECAS.some(b => tipos.includes(b.TIPO_BECA))
                 : tipos.includes(d.TIPO_BECA)
         );
-        if (municipios.length) filtered = filtered.filter(d => municipios.includes(d.MUNICIPIO));
+        if (municipios.length) filtered = filtered.filter(d => municipios.includes(normalizarMunicipio(d.MUNICIPIO)));
         if (escuelas.length)   filtered = filtered.filter(d => escuelas.includes(d.ESCUELA));
 
         // Filtro profundo: recortar BECAS según año/etapa/tipo seleccionados

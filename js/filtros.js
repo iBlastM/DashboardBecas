@@ -5,8 +5,16 @@
 (function () {
     let _debounce = null;
 
-    // Años que sólo tienen datos de Etapa Extraordinaria
-    const SOLO_EX = new Set(['2021', '2024']);
+    // Años que sólo tienen datos de 1ª Etapa
+    const SOLO_E1 = new Set(['2021', '2024']);
+
+    // Municipios canónicos; cualquier otro se agrupa como 'Otro'
+    const MUNICIPIOS_FIJOS = ['Corregidora', 'El Marqués', 'Huimilpan', 'Querétaro'];
+    function normalizarMunicipio(m) {
+        if (!m) return 'Otro';
+        const found = MUNICIPIOS_FIJOS.find(f => f.toLowerCase() === m.trim().toLowerCase());
+        return found || 'Otro';
+    }
 
     // ── Obtener valores seleccionados en un ms-wrap ──────────────────────────
     function getSelected(wrapId) {
@@ -76,13 +84,13 @@
         const wrap = document.getElementById('ms-etapa');
         if (!wrap) return;
 
-        // Hay algún año que admite E1/E2?
-        const tieneE1E2 = aniosSeleccionados.length === 0
-            || aniosSeleccionados.some(a => !SOLO_EX.has(a));
+        // Solo E1 disponible cuando todos los años seleccionados son SOLO_E1
+        const soloE1 = aniosSeleccionados.length > 0
+            && aniosSeleccionados.every(a => SOLO_E1.has(a));
 
-        wrap.querySelectorAll('.ms-opt[data-etapa="E1"], .ms-opt[data-etapa="E2"]')
+        wrap.querySelectorAll('.ms-opt[data-etapa="E2"], .ms-opt[data-etapa="EX"]')
             .forEach(opt => {
-                if (!tieneE1E2) {
+                if (soloE1) {
                     opt.classList.add('ms-disabled');
                     opt.querySelector('input').checked = false;
                 } else {
@@ -97,16 +105,15 @@
     function poblarMunicipios(data) {
         const panel = document.querySelector('#ms-municipio .ms-panel');
         if (!panel) return;
-        const municipios = [...new Set(data.map(d => d.MUNICIPIO))].filter(Boolean).sort();
         panel.innerHTML = '';
-        municipios.forEach(m => {
+        [...MUNICIPIOS_FIJOS, 'Otro'].forEach(m => {
             const lbl = document.createElement('label');
             lbl.className = 'ms-opt';
             const cb = document.createElement('input');
             cb.type  = 'checkbox';
             cb.value = m;
             lbl.appendChild(cb);
-            lbl.append(' ' + m.charAt(0).toUpperCase() + m.slice(1).toLowerCase());
+            lbl.append(' ' + m);
             panel.appendChild(lbl);
         });
         panel.addEventListener('change', () => {
@@ -169,7 +176,7 @@
             if (municipios.length === 0) {
                 opt.style.display = '';
             } else {
-                const mun = opt.dataset.municipio || '';
+                const mun = normalizarMunicipio(opt.dataset.municipio || '');
                 const visible = municipios.includes(mun);
                 opt.style.display = visible ? '' : 'none';
                 // Desmarcar opciones ocultas para no contaminar el filtro de escuelas
@@ -216,7 +223,7 @@
                 ? d.BECAS.some(b => tipos.includes(b.TIPO_BECA))
                 : tipos.includes(d.TIPO_BECA)
         );
-        if (municipios.length) filtered = filtered.filter(d => municipios.includes(d.MUNICIPIO));
+        if (municipios.length) filtered = filtered.filter(d => municipios.includes(normalizarMunicipio(d.MUNICIPIO)));
         if (escuelas.length)   filtered = filtered.filter(d => escuelas.includes(d.ESCUELA));
 
         // ── Filtro profundo: recortar BECAS según año/etapa/tipo seleccionados ──
