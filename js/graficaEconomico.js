@@ -86,7 +86,8 @@ document.addEventListener('datosListos', () => {
         const promTipo   = promediarPor(data, 'TIPO_BECA', 'IMPORTE');
 
         // Aplanar en una sola gráfica de barras con anotaciones de categoría
-        const categorias = ['General', ...Object.keys(promNivel), ...Object.keys(promSector), ...Object.keys(promTipo)];
+        const toSentence = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+        const categorias = ['General', ...Object.keys(promNivel).map(toSentence), ...Object.keys(promSector).map(toSentence), ...Object.keys(promTipo).map(toSentence)];
         const valores    = [
             totalGeneral,
             ...Object.values(promNivel),
@@ -209,7 +210,7 @@ document.addEventListener('datosListos', () => {
 
         elTE._renderTop = renderTopEscInvest;
         const selTE = document.querySelector('[data-chart="chart-top10-escuelas-invest"]');
-        const nTE   = +(selTE?.querySelector('.top-btn.active')?.dataset.n ?? 10);
+        const nTE   = +(selTE?.querySelector('.top-select')?.value ?? 10);
         renderTopEscInvest(nTE);
     }
 
@@ -247,7 +248,7 @@ document.addEventListener('datosListos', () => {
 
         elTC._renderTop = renderTopColInvest;
         const selTC = document.querySelector('[data-chart="chart-top10-colonias-invest"]');
-        const nTC   = +(selTC?.querySelector('.top-btn.active')?.dataset.n ?? 10);
+        const nTC   = +(selTC?.querySelector('.top-select')?.value ?? 10);
         renderTopColInvest(nTC);
     }
 });

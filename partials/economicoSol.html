@@ -25,9 +25,11 @@
     <div class="chart-card">
         <div class="top-selector" data-chart="chart-top-rechazos-curp">
             <span class="top-selector-label">Mostrar:</span>
-            <button class="top-btn" data-n="5">Top 5</button>
-            <button class="top-btn" data-n="10">Top 10</button>
-            <button class="top-btn active" data-n="15">Top 15</button>
+            <select class="top-select">
+                <option value="5">Top 5</option>
+                <option value="10">Top 10</option>
+                <option value="15" selected>Top 15</option>
+            </select>
         </div>
         <div id="chart-top-rechazos-curp" class="chart-container chart-xxl"></div>
     </div>

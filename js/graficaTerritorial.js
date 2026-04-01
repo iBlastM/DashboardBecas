@@ -73,7 +73,7 @@ document.addEventListener('datosListos', () => {
 
         elDEL._renderTop = renderTopDelegacion;
         const selDEL = document.querySelector('[data-chart="chart-delegacion-barras"]');
-        const nDEL   = +(selDEL?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        const nDEL   = +(selDEL?.querySelector('.top-select')?.value ?? 15);
         renderTopDelegacion(nDEL);
     }
 
@@ -301,7 +301,7 @@ document.addEventListener('datosListos', () => {
 
         elTOP._renderTop = renderTopColonias;
         const selTOP = document.querySelector('[data-chart="chart-top15-colonias"]');
-        const nTOP   = +(selTOP?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        const nTOP   = +(selTOP?.querySelector('.top-select')?.value ?? 15);
         renderTopColonias(nTOP);
     }
 
@@ -378,8 +378,9 @@ document.addEventListener('datosListos', () => {
                         colorbar: {
                             title: { text: 'Beneficiarios', font: { color: '#FFF', size: 10 } },
                             tickfont: { color: '#FFF', size: 10 },
+                            tickformat: ',d',
                             thickness: 12,
-                            bgcolor:     'rgba(57,48,83,0.55)',
+                            bgcolor:     C.paperBg,
                             bordercolor: 'rgba(255,255,255,0.14)',
                             borderwidth: 1,
                         },
@@ -660,7 +661,7 @@ document.addEventListener('datosListos', () => {
 
         elDELDIST._renderTop = renderTopDelDist;
         const selDELDIST = document.querySelector('[data-chart="chart-proximidad-delegacion"]');
-        const nDELDIST   = +(selDELDIST?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        const nDELDIST   = +(selDELDIST?.querySelector('.top-select')?.value ?? 15);
         renderTopDelDist(nDELDIST);
     }
 

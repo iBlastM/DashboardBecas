@@ -19,7 +19,7 @@ document.addEventListener('datosListos', () => {
         const GENEROS_VALIDOS = /^(MUJ|HOM|MAS|FEM)/i;
         const dataGen = data.filter(d => d.GENERO && GENEROS_VALIDOS.test(d.GENERO));
         const conteo = contarPor(dataGen, 'GENERO');
-        const labels = Object.keys(conteo);
+        const labels = Object.keys(conteo).map(l => l.charAt(0).toUpperCase() + l.slice(1).toLowerCase());
         const values = Object.values(conteo);
         Plotly.newPlot(elGen, [{
             type: 'pie',
@@ -82,7 +82,8 @@ document.addEventListener('datosListos', () => {
     const elGS = document.getElementById('chart-genero-sector');
     if (elGS) {
         elGS.classList.remove('loading');
-        const sectores = [...new Set(data.map(d => d.SECTOR))].filter(Boolean).sort();
+        const sectoresRaw = [...new Set(data.map(d => d.SECTOR))].filter(Boolean).sort();
+        const sectores = sectoresRaw.map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase());
         const gMap = [
             { key: 'MUJ', label: 'Mujer',  color: C.naranja },
             { key: 'HOM', label: 'Hombre', color: C.verde   },
@@ -94,12 +95,12 @@ document.addEventListener('datosListos', () => {
             type: 'bar',
             name: g.charAt(0) + g.slice(1).toLowerCase(),
             x: sectores,
-            y: sectores.map(s => data.filter(d => d.SECTOR === s && d.GENERO === g).length),
+            y: sectoresRaw.map(s => data.filter(d => d.SECTOR === s && d.GENERO === g).length),
             marker: { color: C.paleta[i % C.paleta.length] },
-            text: sectores.map(s => data.filter(d => d.SECTOR === s && d.GENERO === g).length.toLocaleString('es-MX')),
+            text: sectoresRaw.map(s => data.filter(d => d.SECTOR === s && d.GENERO === g).length.toLocaleString('es-MX')),
             textposition: 'outside',
             textfont: { color: '#FFF', size: 11 },
-            hovertemplate: '<b>%{x} · ' + g + '</b><br>%{y:,} becarios<extra></extra>',
+            hovertemplate: '<b>%{x} · ' + (g.charAt(0).toUpperCase() + g.slice(1).toLowerCase()) + '</b><br>%{y:,} becarios<extra></extra>',
         }));
         Plotly.newPlot(elGS, traces, getLayout('Género por Sector', {
             barmode: 'group',
@@ -328,7 +329,7 @@ document.addEventListener('datosListos', () => {
 
         elTopCurps._renderTop = renderTopCurps;
         const selTC = document.querySelector('[data-chart="chart-top-curps"]');
-        const nTC   = +(selTC?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        const nTC   = +(selTC?.querySelector('.top-select')?.value ?? 15);
         renderTopCurps(nTC);
     }
 });

@@ -133,7 +133,7 @@ document.addEventListener('datosListos', () => {
                 y: invDL,
                 line: { color: C.naranja, width: 2 },
                 marker: { color: C.naranja, size: 9, symbol: 'diamond' },
-                hovertemplate: '<b>%{x}</b><br>Inversión: $%{y:,.0f}<extra></extra>',
+                hovertemplate: '<b>%{x}</b><br>Inversión: $%{y:.3s}<extra></extra>',
                 yaxis: 'y2',
             },
         ], getLayout('Inversión y Beneficiarios por Distrito Local', {
@@ -143,7 +143,8 @@ document.addEventListener('datosListos', () => {
                 overlaying: 'y',
                 side: 'right',
                 showgrid: false,
-                tickformat: '$,.0f',
+                tickprefix: '$',
+                tickformat: '.3s',
             },
             legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18 },
             margin: { t: 58, r: 80, b: 68, l: 60 },
@@ -187,7 +188,7 @@ document.addEventListener('datosListos', () => {
                 y: invDF,
                 line: { color: C.naranja, width: 2 },
                 marker: { color: C.naranja, size: 9, symbol: 'diamond' },
-                hovertemplate: '<b>%{x}</b><br>Inversión: $%{y:,.0f}<extra></extra>',
+                hovertemplate: '<b>%{x}</b><br>Inversión: $%{y:.3s}<extra></extra>',
                 yaxis: 'y2',
             },
         ], getLayout('Inversión y Beneficiarios por Distrito Federal', {
@@ -197,7 +198,8 @@ document.addEventListener('datosListos', () => {
                 overlaying: 'y',
                 side: 'right',
                 showgrid: false,
-                tickformat: '$,.0f',
+                tickprefix: '$',
+                tickformat: '.3s',
             },
             legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18 },
             margin: { t: 58, r: 80, b: 68, l: 60 },
@@ -269,7 +271,7 @@ document.addEventListener('datosListos', () => {
 
         elTS._renderTop = renderTopSecciones;
         const selTS = document.querySelector('[data-chart="chart-top-secciones"]');
-        const nTS   = +(selTS?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        const nTS   = +(selTS?.querySelector('.top-select')?.value ?? 15);
         renderTopSecciones(nTS);
     }
 
@@ -337,7 +339,7 @@ document.addEventListener('datosListos', () => {
 
         elSI._renderTop = renderTopSecInversion;
         const selSI = document.querySelector('[data-chart="chart-seccion-inversion"]');
-        const nSI   = +(selSI?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        const nSI   = +(selSI?.querySelector('.top-select')?.value ?? 15);
         renderTopSecInversion(nSI);
     }
 });

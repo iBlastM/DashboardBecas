@@ -838,28 +838,30 @@ body {
     letter-spacing: 0.4px;
     white-space: nowrap;
 }
-.top-btn {
-    background: transparent;
+.top-select {
+    background: var(--bg-card, #0d0d0d);
     border: 1px solid var(--border);
     border-radius: 4px;
     color: var(--text-muted);
     font-family: var(--font-main);
     font-size: 0.7rem;
     font-weight: 600;
-    padding: 2px 9px;
+    padding: 2px 8px;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    transition: border-color 0.15s, color 0.15s;
     letter-spacing: 0.4px;
 }
-.top-btn:hover {
+.top-select option {
+    background: var(--bg-card, #0d0d0d);
+    color: #FFFFFF;
+}
+.top-select:hover {
     border-color: var(--border-hover);
     color: var(--text-primary);
 }
-.top-btn.active {
-    background: var(--accent-1);
+.top-select:focus {
+    outline: none;
     border-color: var(--accent-1);
-    color: #000;
-    font-weight: 700;
 }
 
 /* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
@@ -998,8 +1000,15 @@ body {
 
 /* Top N selector */
 [data-theme="light"] .top-selector-label { color: var(--text-muted); }
-[data-theme="light"] .top-btn { color: var(--text-muted); }
-[data-theme="light"] .top-btn:hover { color: var(--text-primary); }
+[data-theme="light"] .top-select {
+    background: #ffffff;
+    color: #333333;
+}
+[data-theme="light"] .top-select option {
+    background: #ffffff;
+    color: #333333;
+}
+[data-theme="light"] .top-select:hover { color: var(--text-primary); }
 
 /* Placeholder cards */
 [data-theme="light"] .placeholder-card {

@@ -32,9 +32,12 @@ import pathlib
 import re
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-SRC = ROOT / "base_limpia2.json"
-DST = ROOT / "data_solicitantes.json"
+import pandas as pd
+
+ROOT    = pathlib.Path(__file__).resolve().parent.parent
+SRC     = ROOT / "base_limpia2.json"
+DST     = ROOT / "data_solicitantes.json"
+NOMBRES = ROOT / "data" / "NombresEscuelas.xlsx"
 
 ANIOS_OK = {2020, 2021, 2022, 2023, 2024, 2025}
 
@@ -102,9 +105,28 @@ def _extraer_anio(d: dict):
     return None
 
 
+def _cargar_nombres_escuelas() -> dict:
+    """Devuelve lookup CLAVE (upper) → NOMBRE_ESCUELA desde NombresEscuelas.xlsx."""
+    if not NOMBRES.exists():
+        print(f"AVISO: no se encontró {NOMBRES}, se usarán los nombres originales.")
+        return {}
+    df = pd.read_excel(NOMBRES, dtype=str)
+    df.columns = [c.strip().upper() for c in df.columns]
+    lookup = {}
+    for _, row in df.iterrows():
+        clave = str(row.get("CLAVE", "") or "").strip().upper()
+        nombre = str(row.get("NOMBRE_ESCUELA", "") or "").strip()
+        if clave and nombre:
+            lookup[clave] = nombre
+    print(f"Catálogo de nombres de escuelas cargado: {len(lookup):,} registros")
+    return lookup
+
+
 def main() -> None:
     if not SRC.exists():
         sys.exit(f"ERROR: no se encontró {SRC}")
+
+    nombres_escuelas = _cargar_nombres_escuelas()
 
     print(f"Leyendo: {SRC}")
     print("Agrupando por CURP_BECARIO (todos los estatus) — puede tardar varios minutos...\n")
@@ -152,12 +174,16 @@ def main() -> None:
             periodo = f"{anio}-{_etapa_code(etapa)}"
             es_aprobado = status == "CE-APROBADO"
 
+            # Nombre de escuela: preferir catálogo NombresEscuelas.xlsx
+            clave_esc = str(d.get("CLAVE_ESCUELA") or "").strip().upper()
+            nombre_esc = nombres_escuelas.get(clave_esc) or (d.get("ESCUELA") or "")
+
             # Registro representativo (se actualizará al encontrar un año mayor)
             rep = {
                 "GENERO":            (d.get("GENERO_BECARIO") or ""),
                 "EDAD":              d.get("EDAD_BECARIO"),
                 "COLONIA":           (d.get("COLONIA") or ""),
-                "ESCUELA":           (d.get("ESCUELA") or ""),
+                "ESCUELA":           nombre_esc,
                 "SECTOR":            (d.get("SECTOR") or ""),
                 "NIVEL_EDUCATIVO":   (d.get("NIVEL_EDUCATIVO") or d.get("NIVEL EDUCATIVO") or ""),
                 "GRADO":             d.get("GRADO"),

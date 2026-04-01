@@ -263,8 +263,10 @@ document.addEventListener('datosListos', () => {
             getLayout('Tasa de Aprobación por Etapa', {
                 barmode: 'stack',
                 yaxis: { title: 'Solicitantes', gridcolor: 'rgba(255,255,255,0.08)' },
-                showlegend: false,
-                margin: { t: 68, r: 18, b: 68, l: 72 },
+                showlegend: true,
+                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.22,
+                          font: { color: '#CBD5E1', size: 12, family: C.fuente } },
+                margin: { t: 68, r: 18, b: 88, l: 72 },
             }), plotConfig);
     }
 
@@ -297,8 +299,10 @@ document.addEventListener('datosListos', () => {
             getLayout('Brecha de Género en Rechazos', {
                 barmode: 'stack',
                 yaxis: { title: 'Solicitantes', gridcolor: 'rgba(255,255,255,0.08)' },
-                showlegend: false,
-                margin: { t: 68, r: 18, b: 58, l: 72 },
+                showlegend: true,
+                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.22,
+                          font: { color: '#CBD5E1', size: 12, family: C.fuente } },
+                margin: { t: 68, r: 18, b: 80, l: 72 },
             }), plotConfig);
     }
 
@@ -369,15 +373,15 @@ document.addEventListener('datosListos', () => {
                         gridcolor: 'rgba(255,255,255,0.08)',
                     },
                     yaxis: { autorange: 'reversed', tickfont: { size: 10 } },
-                    margin: { t: 68, r: 220, b: 58, l: 210 },
+                    margin: { t: 68, r: 220, b: 90, l: 210 },
                     annotations: [
                         {
-                            x: 1, y: -0.07, xref: 'paper', yref: 'paper',
-                            xanchor: 'right', yanchor: 'top',
-                            text: '<span style="color:#3B82F6">■</span> Eventualmente beneficiario  ' +
-                                  '<span style="color:#EF4444">■</span> Nunca aprobado',
+                            x: 0.5, y: -0.13, xref: 'paper', yref: 'paper',
+                            xanchor: 'center', yanchor: 'top',
+                            text: '<span style="color:#3B82F6; font-size:16px">■</span> <b style="color:#CBD5E1">Eventualmente beneficiario</b>' +
+                                  '&nbsp;&nbsp;&nbsp;<span style="color:#EF4444; font-size:16px">■</span> <b style="color:#CBD5E1">Nunca aprobado</b>',
                             showarrow: false,
-                            font: { color: '#CBD5E1', size: 11, family: C.fuente },
+                            font: { color: '#CBD5E1', size: 12, family: C.fuente },
                         },
                     ],
                 }),
@@ -387,7 +391,7 @@ document.addEventListener('datosListos', () => {
 
         elTopR._renderTop = renderTopRechazos;
         const selTopR = document.querySelector('[data-chart="chart-top-rechazos-curp"]');
-        const nTopR   = +(selTopR?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        const nTopR   = +(selTopR?.querySelector('.top-select')?.value ?? 15);
         renderTopRechazos(nTopR);
     }
 
@@ -429,7 +433,20 @@ document.addEventListener('datosListos', () => {
                 title: 'Solicitantes',
                 gridcolor: 'rgba(255,255,255,0.08)',
             },
-            margin: { t: 68, r: 18, b: 68, l: 80 },
+            margin: { t: 68, r: 18, b: 100, l: 80 },
+            annotations: [
+                {
+                    x: 0.5, y: -0.05, xref: 'paper', yref: 'paper',
+                    xanchor: 'center', yanchor: 'top',
+                    text: '<span style="color:#6B7280; font-size:16px">■</span> <b style="color:#CBD5E1">Todos (≥1)</b>&nbsp;&nbsp;' +
+                          '<span style="color:#3B82F6; font-size:16px">■</span> <b style="color:#CBD5E1">≥2 intentos</b>&nbsp;&nbsp;' +
+                          '<span style="color:' + C.naranja + '; font-size:16px">■</span> <b style="color:#CBD5E1">≥3 intentos</b>&nbsp;&nbsp;' +
+                          '<span style="color:#F97316; font-size:16px">■</span> <b style="color:#CBD5E1">≥5 intentos</b>&nbsp;&nbsp;' +
+                          '<span style="color:#EF4444; font-size:16px">■</span> <b style="color:#CBD5E1">≥10 intentos (alto riesgo)</b>',
+                    showarrow: false,
+                    font: { color: '#CBD5E1', size: 11, family: C.fuente },
+                },
+            ],
         }), plotConfig);
     }
 });

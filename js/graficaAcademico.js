@@ -137,7 +137,8 @@ document.addEventListener('datosListos', () => {
                 gridcolor: 'rgba(255,255,255,0)',
                 showgrid: false,
             },
-            margin: { t: 58, r: 80, b: 58, l: 72 },
+            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18, yanchor: 'top' },
+            margin: { t: 58, r: 80, b: 80, l: 72 },
         }), plotConfig);
     }
 
@@ -183,7 +184,7 @@ document.addEventListener('datosListos', () => {
 
         elDC._renderTop = renderDiversidadColonia;
         const selDC = document.querySelector('[data-chart="chart-diversidad-colonia"]');
-        const nDC   = +(selDC?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        const nDC   = +(selDC?.querySelector('.top-select')?.value ?? 15);
         renderDiversidadColonia(nDC);
     }
 
@@ -199,7 +200,7 @@ document.addEventListener('datosListos', () => {
 
         const renderTopEscuelas = (n) => {
             const ranking = fullRank.slice(0, n);
-            const labels  = ranking.map(r => r[0]);
+            const labels  = ranking.map(r => r[0].charAt(0).toUpperCase() + r[0].slice(1).toLowerCase());
             const vals    = ranking.map(r => r[1]);
             const maxV    = Math.max(...vals, 1);
 
@@ -215,15 +216,23 @@ document.addEventListener('datosListos', () => {
                 cliponaxis: false,
                 hovertemplate: '<b>%{y}</b><br>%{x:,} beneficiarios<extra></extra>',
             }], getLayout(`Top ${n} Escuelas por Beneficiarios`, {
-                xaxis: { title: 'Beneficiarios' },
+                xaxis: { automargin: true },
                 yaxis: { autorange: 'reversed' },
-                margin: { t: 58, r: 80, b: 48, l: 340 },
+                margin: { t: 58, r: 80, b: 72, l: 340 },
+                annotations: [{
+                    text: 'Beneficiarios',
+                    xref: 'paper', yref: 'paper',
+                    x: 0.4, y: -0.1,
+                    xanchor: 'center', yanchor: 'top',
+                    showarrow: false,
+                    font: { color: '#FFF', size: 13, family: C.fuente },
+                }],
             }), plotConfig);
         };
 
         elTE._renderTop = renderTopEscuelas;
         const selTE = document.querySelector('[data-chart="chart-top-escuelas"]');
-        const nTE   = +(selTE?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        const nTE   = +(selTE?.querySelector('.top-select')?.value ?? 15);
         renderTopEscuelas(nTE);
     }
 });

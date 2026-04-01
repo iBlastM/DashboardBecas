@@ -135,17 +135,15 @@ function fmtPeso(v) {
 }
 
 // ── DELEGADO GLOBAL: selector de Top N ──────────────────────────────────────
-// Maneja clics en cualquier .top-btn dentro de .top-selector[data-chart].
+// Maneja cambios en cualquier .top-select dentro de .top-selector[data-chart].
 // Cada gráfica expone su función de re-render en el elemento DOM como ._renderTop(n).
-document.addEventListener('click', function (e) {
-    const btn = e.target.closest('.top-btn[data-n]');
-    if (!btn) return;
-    const sel = btn.closest('.top-selector[data-chart]');
+document.addEventListener('change', function (e) {
+    const select = e.target.closest('.top-select');
+    if (!select) return;
+    const sel = select.closest('.top-selector[data-chart]');
     if (!sel) return;
-    sel.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
     const el = document.getElementById(sel.dataset.chart);
     if (el && typeof el._renderTop === 'function') {
-        el._renderTop(+btn.dataset.n);
+        el._renderTop(+select.value);
     }
 });

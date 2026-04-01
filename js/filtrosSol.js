@@ -7,14 +7,16 @@
 (function () {
     let _debounce = null;
 
-    // Años que sólo tienen datos de 1ª Etapa
-    const SOLO_E1 = new Set(['2021', '2024']);
+    // Mapas dinámicos año↔etapa (se construyen desde los datos reales)
+    let _etapasPorAnio = new Map();  // 'YYYY' → Set<'E1'|'E2'|'EX'>
+    let _aniosPorEtapa = new Map();  // 'E1'|'E2'|'EX' → Set<'YYYY'>
 
     // Municipios canónicos; cualquier otro se agrupa como 'Otro'
     const MUNICIPIOS_FIJOS = ['Corregidora', 'El Marqués', 'Huimilpan', 'Querétaro'];
     function normalizarMunicipio(m) {
         if (!m) return 'Otro';
-        const found = MUNICIPIOS_FIJOS.find(f => f.toLowerCase() === m.trim().toLowerCase());
+        const slug = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        const found = MUNICIPIOS_FIJOS.find(f => slug(f) === slug(m));
         return found || 'Otro';
     }
 
@@ -79,26 +81,92 @@
         });
     });
 
+    // ── Construir mapas año↔etapa desde los datos completos ───────────────────
+    function construirMapsAnioEtapa(data) {
+        _etapasPorAnio = new Map();
+        _aniosPorEtapa = new Map();
+        data.forEach(d => {
+            const periodos = new Set();
+            if (Array.isArray(d.BECAS) && d.BECAS.length > 0)
+                d.BECAS.forEach(b => { if (b.PERIODO) periodos.add(b.PERIODO); });
+            else if (Array.isArray(d.PERIODOS) && d.PERIODOS.length > 0)
+                d.PERIODOS.forEach(p => { if (p) periodos.add(p); });
+            else if (d.PERIODO)
+                periodos.add(d.PERIODO);
+
+            periodos.forEach(p => {
+                const m = p.match(/^(\d{4})-(\w+)$/);
+                if (!m) return;
+                const [, anio, ec] = m;
+                if (!_etapasPorAnio.has(anio)) _etapasPorAnio.set(anio, new Set());
+                _etapasPorAnio.get(anio).add(ec);
+                if (!_aniosPorEtapa.has(ec)) _aniosPorEtapa.set(ec, new Set());
+                _aniosPorEtapa.get(ec).add(anio);
+            });
+        });
+    }
+
     // ── Actualizar opciones de Etapa según años seleccionados ───────────────
     function actualizarOpcionesEtapa() {
-        const aniosSeleccionados = getSelected('ms-anio');
         const wrap = document.getElementById('ms-etapa');
         if (!wrap) return;
+        const aniosSeleccionados = getSelected('ms-anio');
 
-        const soloE1 = aniosSeleccionados.length > 0
-            && aniosSeleccionados.every(a => SOLO_E1.has(a));
-
-        wrap.querySelectorAll('.ms-opt[data-etapa="E2"], .ms-opt[data-etapa="EX"]')
-            .forEach(opt => {
-                if (soloE1) {
-                    opt.classList.add('ms-disabled');
-                    opt.querySelector('input').checked = false;
-                } else {
-                    opt.classList.remove('ms-disabled');
-                }
+        // Unión de etapas válidas para los años seleccionados (null = todas)
+        let etapasValidas = null;
+        if (aniosSeleccionados.length > 0) {
+            etapasValidas = new Set();
+            aniosSeleccionados.forEach(a => {
+                const ecs = _etapasPorAnio.get(a);
+                if (ecs) ecs.forEach(ec => etapasValidas.add(ec));
             });
+        }
+
+        wrap.querySelectorAll('.ms-opt[data-etapa]').forEach(opt => {
+            const ec = opt.dataset.etapa;
+            const disabled = etapasValidas !== null && !etapasValidas.has(ec);
+            if (disabled) {
+                opt.classList.add('ms-disabled');
+                opt.querySelector('input').checked = false;
+            } else {
+                opt.classList.remove('ms-disabled');
+            }
+        });
 
         updateTrigger('ms-etapa', 'Todas');
+    }
+
+    // ── Actualizar opciones de Año según etapas seleccionadas ───────────────
+    function actualizarOpcionesAnio() {
+        const wrap = document.getElementById('ms-anio');
+        if (!wrap) return;
+        const etapasSeleccionadas = getSelected('ms-etapa').map(e =>
+            e === '1RA ETAPA' ? 'E1' : e === '2DA ETAPA' ? 'E2' : 'EX'
+        );
+
+        // Unión de años válidos para las etapas seleccionadas (null = todos)
+        let aniosValidos = null;
+        if (etapasSeleccionadas.length > 0) {
+            aniosValidos = new Set();
+            etapasSeleccionadas.forEach(ec => {
+                const anios = _aniosPorEtapa.get(ec);
+                if (anios) anios.forEach(a => aniosValidos.add(a));
+            });
+        }
+
+        wrap.querySelectorAll('.ms-opt').forEach(opt => {
+            const cb = opt.querySelector('input');
+            if (!cb) return;
+            const disabled = aniosValidos !== null && !aniosValidos.has(cb.value);
+            if (disabled) {
+                opt.classList.add('ms-disabled');
+                cb.checked = false;
+            } else {
+                opt.classList.remove('ms-disabled');
+            }
+        });
+
+        updateTrigger('ms-anio', 'Todos');
     }
 
     // ── Poblar dropdown de estatus (dinámico) ────────────────────────────────
@@ -252,21 +320,26 @@
         }
 
         if (sector.length)   filtered = filtered.filter(d => sector.includes(d.SECTOR));
-        if (anios.length)    filtered = filtered.filter(d =>
-            Array.isArray(d.AÑOS)
-                ? d.AÑOS.some(a => anios.includes(a))
-                : anios.includes(Number(d.AÑO))
-        );
-        if (etapas.length)   filtered = filtered.filter(d =>
-            Array.isArray(d.BECAS) && d.BECAS.length > 0
-                ? d.BECAS.some(b => b.PERIODO && etapaCodes.some(ec => b.PERIODO.endsWith('-' + ec)))
-                : etapas.includes(d.ETAPA)
-        );
-        if (tipos.length)    filtered = filtered.filter(d =>
-            Array.isArray(d.BECAS) && d.BECAS.length > 0
-                ? d.BECAS.some(b => tipos.includes(b.TIPO_BECA))
-                : tipos.includes(d.TIPO_BECA)
-        );
+        // Filtro combinado: año + etapa + tipo con lógica AND por beca
+        // (evita falsos positivos cuando un registro tiene becas en años/etapas distintas)
+        if (anios.length || etapas.length || tipos.length) {
+            filtered = filtered.filter(d => {
+                if (Array.isArray(d.BECAS) && d.BECAS.length > 0) {
+                    return d.BECAS.some(b => {
+                        const okAnio  = !anios.length      || (b.PERIODO && anios.some(a => b.PERIODO.startsWith(a + '-')));
+                        const okEtapa = !etapaCodes.length || (b.PERIODO && etapaCodes.some(ec => b.PERIODO.endsWith('-' + ec)));
+                        const okTipo  = !tipos.length      || tipos.includes(b.TIPO_BECA);
+                        return okAnio && okEtapa && okTipo;
+                    });
+                }
+                // Registro plano: no-beneficiario o sin BECAS
+                // d.AÑOS = vacío para no-beneficiarios; d.AÑO = año de solicitud
+                const okAnio  = !anios.length  || (Array.isArray(d.AÑOS) && d.AÑOS.some(a => anios.includes(a))) || anios.includes(Number(d.AÑO));
+                const okEtapa = !etapas.length || etapas.includes(d.ETAPA);
+                const okTipo  = !tipos.length  || tipos.includes(d.TIPO_BECA);
+                return okAnio && okEtapa && okTipo;
+            });
+        }
         if (municipios.length) filtered = filtered.filter(d => municipios.includes(normalizarMunicipio(d.MUNICIPIO)));
         if (escuelas.length)   filtered = filtered.filter(d => escuelas.includes(d.ESCUELA));
 
@@ -282,7 +355,7 @@
                 if (tipos.length)
                     becas = becas.filter(b => tipos.includes(b.TIPO_BECA));
                 const periodos = [...new Set(becas.map(b => b.PERIODO).filter(Boolean))];
-                return { ...d, BECAS: becas, PERIODOS: periodos };
+                return { ...d, BECAS: becas, PERIODOS: periodos, NUM_BECAS: becas.length };
             });
         }
 
@@ -305,6 +378,7 @@
             });
             
         actualizarOpcionesEtapa();
+        actualizarOpcionesAnio();
         aplicar();
     }
 
@@ -313,6 +387,7 @@
         if (window._filtrosInit) return;
         window._filtrosInit = true;
 
+        construirMapsAnioEtapa(window.dashDataFull);
         poblarEstatus(window.dashDataFull);
         poblarMunicipios(window.dashDataFull);
         poblarEscuelas(window.dashDataFull);
@@ -321,7 +396,7 @@
         initWrap('ms-nivel',   'Todos');
         initWrap('ms-sector',  'Todos');
         initWrap('ms-anio',    'Todos', actualizarOpcionesEtapa);
-        initWrap('ms-etapa',   'Todas');
+        initWrap('ms-etapa',   'Todas', actualizarOpcionesAnio);
         initWrap('ms-tipo',    'Todos');
 
         // ms-escuela y ms-estatus se inicializan en sus respectivos poblar*()

@@ -43,7 +43,7 @@ document.addEventListener('datosListos', () => {
     if (elETN) {
         elETN.classList.remove('loading');
         const promedios = promediarPor(conTutor, 'NIVEL_EDUCATIVO', 'EDAD_TUTOR');
-        const niveles   = Object.keys(promedios).filter(n => n && n !== 'Sin dato').sort();
+        const niveles   = Object.keys(promedios).filter(n => n && n !== 'Sin dato' && n !== 'UNIVERSIDAD').sort();
         const vals      = niveles.map(n => +promedios[n].toFixed(1));
 
         Plotly.newPlot(elETN, [{
@@ -215,7 +215,7 @@ document.addEventListener('datosListos', () => {
 
         elJF._renderTop = renderJefatura;
         const selJF = document.querySelector('[data-chart="chart-jefatura-femenina"]');
-        const nJF   = +(selJF?.querySelector('.top-btn.active')?.dataset.n ?? 15);
+        const nJF   = +(selJF?.querySelector('.top-select')?.value ?? 15);
         renderJefatura(nJF);
     }
 });

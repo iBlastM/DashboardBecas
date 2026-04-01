@@ -20,7 +20,9 @@ document.addEventListener('datosListos', () => {
         return;
     }
 
-    const beneficiarios = data.filter(d => d.ES_BENEFICIARIO === true).length;
+    // Cuenta registros con becas aprobadas en el rango filtrado
+    // (d.BECAS ya fue recortado por el filtro profundo de año/etapa/tipo)
+    const beneficiarios = data.filter(d => Array.isArray(d.BECAS) && d.BECAS.length > 0).length;
     const tasaAprobacion = total > 0 ? (beneficiarios / total) * 100 : 0;
 
     // Inversión e importe medio sólo sobre becas aprobadas
