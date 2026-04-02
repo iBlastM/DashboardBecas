@@ -34,6 +34,8 @@ document.addEventListener('datosListos', () => {
         return stats;
     };
 
+    const toLabel = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
     /**
      * Builds stacked-bar traces (Aprobados + No Aprobados) with
      * a floating text scatter showing the approval rate %.
@@ -50,7 +52,7 @@ document.addEventListener('datosListos', () => {
                 hovertemplate: '<b>%{x}</b><br>Aprobados: %{y:,}<extra></extra>',
             },
             {
-                type: 'bar', name: 'No Aprobados',
+                type: 'bar', name: 'No aprobados',
                 x: cats, y: rechazados,
                 marker: { color: '#EF4444' },
                 hovertemplate: '<b>%{x}</b><br>No aprobados: %{y:,}<extra></extra>',
@@ -75,9 +77,9 @@ document.addEventListener('datosListos', () => {
 
         const STATUS_LABELS = {
             'CE-APROBADO':    'Aprobado',
-            'CON RECHAZOS':   'Con Rechazos',
+            'CON RECHAZOS':   'Con rechazos',
             'CE-CON RECHAZO': 'Rechazo (CE)',
-            'CE-PENDIENTE':   'Pendiente Histórico',
+            'CE-PENDIENTE':   'Pendiente histórico',
             'PENDIENTE':      'Pendiente',
             'CANCELADO':      'Cancelado',
         };
@@ -121,7 +123,7 @@ document.addEventListener('datosListos', () => {
             textfont: { color: '#FFF', size: 12, family: C.fuente },
             textinfo: 'label+percent',
             hovertemplate: '<b>%{label}</b><br>%{value:,} solicitantes<br>%{percent}<extra></extra>',
-        }], getLayout('Distribución de Estatus Final', {
+        }], getLayout('Distribución de estatus final', {
             showlegend: false,
             margin: { t: 58, r: 10, b: 20, l: 10 },
         }), plotConfig);
@@ -140,8 +142,8 @@ document.addEventListener('datosListos', () => {
         const tot     = niveles.map(n => stats[n].total);
 
         Plotly.newPlot(elTN,
-            stackedAprobTraces(niveles, aprob, rech, tot),
-            getLayout('Tasa de Aprobación por Nivel', {
+            stackedAprobTraces(niveles.map(toLabel), aprob, rech, tot),
+            getLayout('Tasa de aprobación por nivel', {
                 barmode: 'stack',
                 yaxis: { title: 'Solicitantes', gridcolor: 'rgba(255,255,255,0.08)' },
                 legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.22 },
@@ -162,8 +164,8 @@ document.addEventListener('datosListos', () => {
         const tot     = sectores.map(s => stats[s].total);
 
         Plotly.newPlot(elTS,
-            stackedAprobTraces(sectores, aprob, rech, tot),
-            getLayout('Tasa de Aprobación por Sector', {
+            stackedAprobTraces(sectores.map(toLabel), aprob, rech, tot),
+            getLayout('Tasa de aprobación por sector', {
                 barmode: 'stack',
                 yaxis: { title: 'Solicitantes', gridcolor: 'rgba(255,255,255,0.08)' },
                 showlegend: false,
@@ -202,7 +204,7 @@ document.addEventListener('datosListos', () => {
             type: 'bar',
             orientation: 'h',
             x: tasasRechazo,
-            y: tipos,
+            y: tipos.map(toLabel),
             marker: { color: tasasRechazo.map(colorSemaforo) },
             text: tasasRechazo.map((t, i) =>
                 t.toFixed(1) + '%  (' + totales[i].toLocaleString('es-MX') + ' sol.)'
@@ -212,9 +214,9 @@ document.addEventListener('datosListos', () => {
             cliponaxis: false,
             customdata: totales,
             hovertemplate: '<b>%{y}</b><br>% nunca aprobados: %{x:.1f}%<br>Total solicitudes: %{customdata:,}<extra></extra>',
-        }], getLayout('Tasa de No-Aprobación por Tipo de Beca · Semáforo', {
+        }], getLayout('Tasa de no-aprobación por tipo de beca · semáforo', {
             xaxis: {
-                title: '% Nunca Aprobados',
+                title: '% nunca aprobados',
                 range: [0, maxTasa * 1.45],
                 gridcolor: 'rgba(255,255,255,0.08)',
             },
@@ -259,8 +261,8 @@ document.addEventListener('datosListos', () => {
         const tot    = etapas.map(e => stats[e].total);
 
         Plotly.newPlot(elTE,
-            stackedAprobTraces(etapas, aprob, rech, tot),
-            getLayout('Tasa de Aprobación por Etapa', {
+            stackedAprobTraces(etapas.map(toLabel), aprob, rech, tot),
+            getLayout('Tasa de aprobación por etapa', {
                 barmode: 'stack',
                 yaxis: { title: 'Solicitantes', gridcolor: 'rgba(255,255,255,0.08)' },
                 showlegend: true,
@@ -296,7 +298,7 @@ document.addEventListener('datosListos', () => {
 
         Plotly.newPlot(elTG,
             stackedAprobTraces(cats, aprob, rech, tot),
-            getLayout('Brecha de Género en Rechazos', {
+            getLayout('Brecha de género en rechazos', {
                 barmode: 'stack',
                 yaxis: { title: 'Solicitantes', gridcolor: 'rgba(255,255,255,0.08)' },
                 showlegend: true,
@@ -426,8 +428,8 @@ document.addEventListener('datosListos', () => {
             textposition: 'outside',
             textfont: { color: '#FFF', size: 10 },
             cliponaxis: false,
-            hovertemplate: '<b>%{x} INTENTOS</b><br>%{y:,} sin aprobación<extra></extra>',
-        }], getLayout('Riesgo de Abandono · Nunca Aprobados por Nº de Intentos', {
+            hovertemplate: '<b>%{x} intentos</b><br>%{y:,} sin aprobación<extra></extra>',
+        }], getLayout('Riesgo de abandono · nunca aprobados por Nº de intentos', {
             xaxis: { title: 'Intentos acumulados (sin aprobación)' },
             yaxis: {
                 title: 'Solicitantes',

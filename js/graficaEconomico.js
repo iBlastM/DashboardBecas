@@ -18,8 +18,8 @@ document.addEventListener('datosListos', () => {
     if (elGN) {
         elGN.classList.remove('loading');
         const sumas  = sumarPor(data, 'NIVEL_EDUCATIVO', 'IMPORTE');
-        const labels = Object.keys(sumas).filter(k => k && k !== 'Sin dato');
-        const values = labels.map(k => sumas[k]);
+        const labels = Object.keys(sumas).filter(k => k && k !== 'Sin dato').map(k => k.charAt(0).toUpperCase() + k.slice(1).toLowerCase());
+        const values = Object.keys(sumas).filter(k => k && k !== 'Sin dato').map(k => sumas[k]);
 
         Plotly.newPlot(elGN, [{
             type: 'pie',
@@ -33,7 +33,7 @@ document.addEventListener('datosListos', () => {
             textinfo: 'label+percent',
             hovertemplate: '<b>%{label}</b><br>$%{value:,.0f}<br>%{percent}<extra></extra>',
         }], getLayout('Gasto por Nivel Educativo', {
-            showlegend: true,
+            showlegend: false,
             margin: { t: 58, r: 10, b: 20, l: 10 },
             legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.15 },
         }), plotConfig);
@@ -47,11 +47,12 @@ document.addEventListener('datosListos', () => {
         elIS.classList.remove('loading');
         const sumas   = sumarPor(data, 'SECTOR', 'IMPORTE');
         const sectores = Object.keys(sumas).filter(k => k && k !== 'Sin dato').sort();
+        const sectoresDisplay = sectores.map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase());
         const vals     = sectores.map(s => sumas[s] || 0);
 
         Plotly.newPlot(elIS, [{
             type: 'bar',
-            x: sectores,
+            x: sectoresDisplay,
             y: vals,
             marker: { color: [C.verde, C.naranja, '#A855F7', '#3B82F6'].slice(0, sectores.length) },
             text: vals.map(v => '$' + fmt(v, { maximumFractionDigits: 0 })),
@@ -154,7 +155,7 @@ document.addEventListener('datosListos', () => {
 
         const traces = todosLos.map((tipo, i) => ({
             type: 'bar',
-            name: tipo,
+            name: tipo.charAt(0).toUpperCase() + tipo.slice(1).toLowerCase(),
             x: [sumasTipo[tipo] || 0],
             y: ['Inversión Total'],
             orientation: 'h',
@@ -187,7 +188,7 @@ document.addEventListener('datosListos', () => {
 
         const renderTopEscInvest = (n) => {
             const ranking = fullRankE.slice(0, n);
-            const labels  = ranking.map(r => r[0]);
+            const labels  = ranking.map(r => r[0].charAt(0).toUpperCase() + r[0].slice(1).toLowerCase());
             const vals    = ranking.map(r => r[1]);
 
             Plotly.newPlot(elTE, [{
@@ -225,7 +226,7 @@ document.addEventListener('datosListos', () => {
 
         const renderTopColInvest = (n) => {
             const ranking = fullRankC.slice(0, n);
-            const labels  = ranking.map(r => r[0]);
+            const labels  = ranking.map(r => r[0].charAt(0).toUpperCase() + r[0].slice(1).toLowerCase());
             const vals    = ranking.map(r => r[1]);
 
             Plotly.newPlot(elTC, [{

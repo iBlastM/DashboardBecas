@@ -22,9 +22,10 @@ document.addEventListener('datosListos', () => {
 
         const renderTopDelegacion = (n) => {
             const rankingDel = fullRankDel.slice(0, n);
-            const labsDel = rankingDel.map(r => r[0]);
+            const keysDel = rankingDel.map(r => r[0]);
+            const labsDel = keysDel.map(k => k.charAt(0).toUpperCase() + k.slice(1).toLowerCase());
             const valsDel = rankingDel.map(r => r[1]);
-            const invDel  = labsDel.map(l => sumasDel[l] || 0);
+            const invDel  = keysDel.map(l => sumasDel[l] || 0);
 
             Plotly.newPlot(elDEL, [
                 {
@@ -197,11 +198,11 @@ document.addEventListener('datosListos', () => {
         const rankingDel = sortedDesc(conteoDel);
 
         const ids     = ['Total', ...rankingDel.map(r => r[0])];
-        const labels  = ['Total', ...rankingDel.map(r => r[0])];
+        const labels  = ['Total', ...rankingDel.map(r => r[0].charAt(0).toUpperCase() + r[0].slice(1).toLowerCase())];
         const parents = ['',      ...rankingDel.map(() => 'Total')];
         const values  = [0,       ...rankingDel.map(r => r[1])];
         const texts   = ['',      ...rankingDel.map(r =>
-            r[0] + '<br>' + r[1].toLocaleString('es-MX') + ' becarios<br>$' +
+            (r[0].charAt(0).toUpperCase() + r[0].slice(1).toLowerCase()) + '<br>' + r[1].toLocaleString('es-MX') + ' becarios<br>$' +
             (sumasDel[r[0]] || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 })
         )];
 
@@ -250,9 +251,10 @@ document.addEventListener('datosListos', () => {
 
         const renderTopColonias = (n) => {
             const ranking = fullRank.slice(0, n);
-            const labels  = ranking.map(r => r[0]);
+            const keys    = ranking.map(r => r[0]);
+            const labels  = keys.map(k => k.charAt(0).toUpperCase() + k.slice(1).toLowerCase());
             const vals    = ranking.map(r => r[1]);
-            const invers  = labels.map(l => sumasT[l] || 0);
+            const invers  = keys.map(l => sumasT[l] || 0);
 
             Plotly.newPlot(elTOP, [
                 {
@@ -336,7 +338,7 @@ document.addEventListener('datosListos', () => {
                         texts.push(
                             `<b>${nom}</b><br>` +
                             `${conteoCol[nom].toLocaleString('es-MX')} becarios<br>` +
-                            `$${(sumasCol[nom] || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 })}`
+                            `Inversión: $${(sumasCol[nom] || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 })}`
                         );
                     }
                 });
@@ -496,7 +498,7 @@ document.addEventListener('datosListos', () => {
             `Distribución de Distancias Alumno → Escuela · ${pctSinMovil}% recorre ≤ 2 km`,
             {
                 xaxis: { title: 'Distancia (km)', range: [0, xMax], dtick: Math.max(1, Math.floor(xMax / 15)) },
-                yaxis: { title: 'Beneficiarios' },
+                yaxis: { title: 'Beneficiarios', tickformat: ',' },
                 bargap: 0.05,
                 legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.20 },
                 margin: { t: 64, r: 20, b: 80, l: 70 },
@@ -598,7 +600,7 @@ document.addEventListener('datosListos', () => {
 
         const renderTopDelDist = (n) => {
             const delegaciones = delegacionesFull.slice(0, n);
-            const labels = delegaciones.map(d => d.del);
+            const labels = delegaciones.map(d => d.del.charAt(0).toUpperCase() + d.del.slice(1).toLowerCase());
             const proms  = delegaciones.map(d => d.prom);
             const p75s   = delegaciones.map(d => d.p75);
             const cnts   = delegaciones.map(d => d.cnt);
@@ -691,7 +693,7 @@ document.addEventListener('datosListos', () => {
             mode: 'markers+text',
             x: agg.map(a => a.distProm),
             y: agg.map(a => a.impProm),
-            text: agg.map(a => a.del),
+            text: agg.map(a => a.del.charAt(0).toUpperCase() + a.del.slice(1).toLowerCase()),
             textposition: 'top center',
             textfont: { size: 9, color: 'rgba(255,255,255,0.75)' },
             marker: {

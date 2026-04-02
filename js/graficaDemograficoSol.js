@@ -60,7 +60,7 @@ document.addEventListener('datosListos', () => {
         },
     ], getLayout('Distribución por Nº de Solicitudes Acumuladas · Aprobados vs Nunca Aprobados', {
         barmode: 'stack',
-        xaxis: { title: 'Nº de Solicitudes Acumuladas por Persona' },
+        xaxis: { title: 'Nº de solicitudes acumuladas por persona' },
         yaxis: {
             title: 'Solicitantes',
             gridcolor: 'rgba(255,255,255,0.08)',

@@ -21,7 +21,7 @@ document.addEventListener('datosListos', () => {
         Plotly.newPlot(elGT, [{
             type: 'pie',
             hole: 0.52,
-            labels: Object.keys(conteo),
+            labels: Object.keys(conteo).map(l => l.charAt(0).toUpperCase() + l.slice(1).toLowerCase()),
             values: Object.values(conteo),
             marker: {
                 colors: ['#1dafe9','#cb63e0'],
@@ -45,10 +45,11 @@ document.addEventListener('datosListos', () => {
         const promedios = promediarPor(conTutor, 'NIVEL_EDUCATIVO', 'EDAD_TUTOR');
         const niveles   = Object.keys(promedios).filter(n => n && n !== 'Sin dato' && n !== 'UNIVERSIDAD').sort();
         const vals      = niveles.map(n => +promedios[n].toFixed(1));
+        const nivelesDisplay = niveles.map(n => n.charAt(0).toUpperCase() + n.slice(1).toLowerCase());
 
         Plotly.newPlot(elETN, [{
             type: 'bar',
-            x: niveles,
+            x: nivelesDisplay,
             y: vals,
             marker: { color: C.paleta.slice(0, niveles.length) },
             text: vals.map(v => v.toFixed(1) + ' años'),
@@ -75,7 +76,7 @@ document.addEventListener('datosListos', () => {
         const sectores = [...new Set(conTutor.map(d => d.SECTOR))].filter(Boolean).sort();
         const traces   = sectores.map((s, i) => ({
             type: 'box',
-            name: s,
+            name: s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(),
             y: conTutor.filter(d => d.SECTOR === s).map(d => d.EDAD_TUTOR),
             marker: { color: C.paleta[i % C.paleta.length] },
             boxmean: 'sd',
@@ -83,7 +84,7 @@ document.addEventListener('datosListos', () => {
         }));
         Plotly.newPlot(elETS, traces, getLayout('Distribución de Edad del Tutor por Sector', {
             showlegend: false,
-            yaxis: { title: 'Edad Tutor (años)', gridcolor: 'rgba(255,255,255,0.08)' },
+            yaxis: { title: 'Edad tutor (años)', gridcolor: 'rgba(255,255,255,0.08)' },
             margin: { t: 58, r: 18, b: 58, l: 72 },
         }), plotConfig);
     }
@@ -112,7 +113,7 @@ document.addEventListener('datosListos', () => {
             cliponaxis: false,
             hovertemplate: '<b>%{x} AÑOS</b><br>%{y:,} tutores<extra></extra>',
         }], getLayout('Rangos de Edad del Tutor', {
-            xaxis: { title: 'Rango de Edad' },
+            xaxis: { title: 'Rango de edad' },
             yaxis: { title: 'Tutores', gridcolor: 'rgba(255,255,255,0.08)' },
             margin: { t: 58, r: 18, b: 68, l: 72 },
         }), plotConfig);
@@ -207,7 +208,7 @@ document.addEventListener('datosListos', () => {
                 cliponaxis: false,
                 hovertemplate: '<b>%{y}</b><br>Tutoras mujeres: %{x:.1f}%<extra></extra>',
             }], getLayout(`Índice de Jefatura Femenina Estimada · % Tutoras por Colonia (Top ${n})`, {
-                xaxis: { title: '% Tutoras Mujeres', range: [0, 115] },
+                xaxis: { title: '% tutoras mujeres', range: [0, 115] },
                 yaxis: { autorange: 'reversed' },
                 margin: { t: 58, r: 100, b: 58, l: 220 },
             }), plotConfig);

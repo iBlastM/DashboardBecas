@@ -157,7 +157,7 @@ document.addEventListener('datosListos', () => {
                 zerolinecolor: 'rgba(255,255,255,0.4)',
                 zerolinewidth: 2,
             },
-            yaxis: { title: 'Rango de Edad' },
+            yaxis: { title: 'Rango de edad' },
             margin: { t: 58, r: 80, b: 84, l: 60 },
             legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.22 },
         }), plotConfig);
@@ -172,10 +172,11 @@ document.addEventListener('datosListos', () => {
         const promedios = promediarPor(data, 'NIVEL_EDUCATIVO', 'EDAD');
         const niveles   = Object.keys(promedios).filter(n => n && n !== 'Sin dato').sort();
         const vals      = niveles.map(n => +promedios[n].toFixed(1));
+        const nivelesDisplay = niveles.map(n => n.charAt(0).toUpperCase() + n.slice(1).toLowerCase());
 
         Plotly.newPlot(elEN, [{
             type: 'bar',
-            x: niveles,
+            x: nivelesDisplay,
             y: vals,
             marker: { color: C.paleta.slice(0, niveles.length) },
             text: vals.map(v => v.toFixed(1) + ' años'),
@@ -222,10 +223,11 @@ document.addEventListener('datosListos', () => {
         const niveles = Object.keys(totalN).sort();
         const pcts  = niveles.map(n => +(( (rezagoN[n] || 0) / totalN[n]) * 100).toFixed(2));
         const maxPct = Math.max(...pcts, 1);
+        const nivelesRezDisplay = niveles.map(n => n.charAt(0).toUpperCase() + n.slice(1).toLowerCase());
 
         Plotly.newPlot(elRez, [{
             type: 'bar',
-            x: niveles,
+            x: nivelesRezDisplay,
             y: pcts,
             marker: { color: pcts.map(v => v > 10 ? '#EF4444' : v > 5 ? C.naranja : C.verde) },
             text: pcts.map(v => v.toFixed(1) + '%'),
@@ -256,7 +258,6 @@ document.addEventListener('datosListos', () => {
         // Cada fila es un beneficiario único; NUM_BECAS = total de becas recibidas.
         // Agrupamos por valor de NUM_BECAS: cada "puesto" = todos los beneficiarios
         // que recibieron exactamente esa cantidad de becas.
-        const MAX_CURPS_TOOLTIP = 30;
         const grupos = {};
         data.filter(d => d.NUM_BECAS > 0).forEach(d => {
             const k = d.NUM_BECAS;
@@ -281,23 +282,6 @@ document.addEventListener('datosListos', () => {
                 return `rgb(${r},${g},${b})`;
             });
 
-            const tooltips = puestos.map((nb, i) => {
-                const g          = grupos[nb];
-                const cnt        = g.curps.length;
-                const mostrar    = g.curps.slice(0, MAX_CURPS_TOOLTIP);
-                const extras     = cnt - mostrar.length;
-                const promImporte = cnt > 0
-                    ? (g.importeTotal / cnt).toLocaleString('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 })
-                    : '$0';
-                return (
-                    `<b>PUESTO #${i + 1} · ${nb} BECAS</b><br>` +
-                    `${cnt.toLocaleString('es-MX')} beneficiarios · Importe prom: ${promImporte}<br>` +
-                    `<br><b>CURPs:</b><br>` +
-                    mostrar.join('<br>') +
-                    (extras > 0 ? `<br><i>… y ${extras} más</i>` : '')
-                );
-            });
-
             Plotly.newPlot(elTopCurps, [{
                 type: 'bar',
                 orientation: 'h',
@@ -311,8 +295,7 @@ document.addEventListener('datosListos', () => {
                 textposition: 'outside',
                 textfont: { color: '#FFF', size: 11 },
                 cliponaxis: false,
-                customdata: tooltips,
-                hovertemplate: '%{customdata}<extra></extra>',
+                hoverinfo: 'none',
             }], getLayout(`Top ${n} Puestos · Número de Becas Otorgadas por Beneficiario`, {
                 xaxis: {
                     title: 'Beneficiarios en el puesto',

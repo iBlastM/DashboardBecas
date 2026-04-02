@@ -20,7 +20,7 @@ document.addEventListener('datosListos', () => {
         Plotly.newPlot(elBN, [{
             type: 'pie',
             hole: 0.52,
-            labels: Object.keys(conteo),
+            labels: Object.keys(conteo).map(l => l.charAt(0).toUpperCase() + l.slice(1).toLowerCase()),
             values: Object.values(conteo),
             marker: {
                 colors: C.paleta,
@@ -45,7 +45,7 @@ document.addEventListener('datosListos', () => {
         Plotly.newPlot(elPS, [{
             type: 'pie',
             hole: 0.52,
-            labels: Object.keys(conteo),
+            labels: Object.keys(conteo).map(l => l.charAt(0).toUpperCase() + l.slice(1).toLowerCase()),
             values: Object.values(conteo),
             marker: {
                 colors: [C.verde, C.naranja, '#A855F7'],
@@ -103,13 +103,14 @@ document.addEventListener('datosListos', () => {
             escSector[d.SECTOR].add(d.ESCUELA);
         });
         const sectores   = Object.keys(escSector).sort();
+        const sectoresDisplay = sectores.map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase());
         const numEscuelas = sectores.map(s => escSector[s].size);
         const numBenef   = sectores.map(s => data.filter(d => d.SECTOR === s).length);
 
         Plotly.newPlot(elDS, [
             {
-                type: 'bar', name: 'Escuelas Únicas',
-                x: sectores, y: numEscuelas,
+                type: 'bar', name: 'Escuelas únicas',
+                x: sectoresDisplay, y: numEscuelas,
                 marker: { color: C.verde },
                 text: numEscuelas.map(v => v.toLocaleString('es-MX')),
                 textposition: 'outside',
@@ -119,7 +120,7 @@ document.addEventListener('datosListos', () => {
             },
             {
                 type: 'bar', name: 'Beneficiarios',
-                x: sectores, y: numBenef,
+                x: sectoresDisplay, y: numBenef,
                 marker: { color: C.naranja },
                 text: numBenef.map(v => v.toLocaleString('es-MX')),
                 textposition: 'outside',
@@ -161,7 +162,7 @@ document.addEventListener('datosListos', () => {
 
         const renderDiversidadColonia = (n) => {
             const ranking = fullDC.slice(0, n);
-            const labels  = ranking.map(r => r[0]);
+            const labels  = ranking.map(r => r[0].charAt(0).toUpperCase() + r[0].slice(1).toLowerCase());
             const vals    = ranking.map(r => r[1]);
 
             Plotly.newPlot(elDC, [{

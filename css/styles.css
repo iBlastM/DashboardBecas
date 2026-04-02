@@ -646,6 +646,63 @@ body {
     cursor: default;
 }
 
+/* ── HELP ICON TOOLTIP ───────────────────────────────────────────────────── */
+.help-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid var(--accent-1);
+    color: var(--accent-1);
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    user-select: none;
+    align-self: center;
+}
+
+.help-tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 260px;
+    background: #1a1a1a;
+    border: 1px solid var(--accent-1);
+    border-radius: var(--radius);
+    padding: 0.7rem 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: #ffffff;
+    line-height: 1.5;
+    z-index: 200;
+    box-shadow: var(--shadow);
+    pointer-events: none;
+    white-space: normal;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.help-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-bottom-color: var(--accent-1);
+}
+
+.help-icon:hover .help-tooltip,
+.help-icon:focus .help-tooltip {
+    display: block;
+}
+
 /* ── FOOTER ──────────────────────────────────────────────────────────────── */
 .footer {
     max-width: 1620px;

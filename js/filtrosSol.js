@@ -169,6 +169,44 @@
         updateTrigger('ms-anio', 'Todos');
     }
 
+    // ── Deshabilitar UNIVERSIDAD cuando Extraordinaria está seleccionada ────────
+    function actualizarTipoPorEtapa() {
+        const wrap = document.getElementById('ms-tipo');
+        if (!wrap) return;
+        const etapasSeleccionadas = getSelected('ms-etapa');
+        const tieneEX = etapasSeleccionadas.includes('EXTRATEMPORANEA');
+        wrap.querySelectorAll('.ms-opt').forEach(opt => {
+            const cb = opt.querySelector('input');
+            if (!cb || cb.value !== 'UNIVERSIDAD') return;
+            if (tieneEX) {
+                opt.classList.add('ms-disabled');
+                cb.checked = false;
+            } else {
+                opt.classList.remove('ms-disabled');
+            }
+        });
+        updateTrigger('ms-tipo', 'Todos');
+    }
+
+    // ── Deshabilitar Extraordinaria cuando UNIVERSIDAD está seleccionada ────────
+    function actualizarEtapaPorTipo() {
+        const wrap = document.getElementById('ms-etapa');
+        if (!wrap) return;
+        const tiposSeleccionados = getSelected('ms-tipo');
+        const tieneUniversidad = tiposSeleccionados.includes('UNIVERSIDAD');
+        wrap.querySelectorAll('.ms-opt[data-etapa="EX"]').forEach(opt => {
+            const cb = opt.querySelector('input');
+            if (!cb) return;
+            if (tieneUniversidad) {
+                opt.classList.add('ms-disabled');
+                cb.checked = false;
+            } else {
+                opt.classList.remove('ms-disabled');
+            }
+        });
+        updateTrigger('ms-etapa', 'Todas');
+    }
+
     // ── Poblar dropdown de estatus (dinámico) ────────────────────────────────
     function poblarEstatus(data) {
         const panel = document.querySelector('#ms-estatus .ms-panel');
@@ -379,6 +417,8 @@
             
         actualizarOpcionesEtapa();
         actualizarOpcionesAnio();
+        actualizarTipoPorEtapa();
+        actualizarEtapaPorTipo();
         aplicar();
     }
 
@@ -395,9 +435,9 @@
         initWrap('ms-registro', 'Todos');
         initWrap('ms-nivel',   'Todos');
         initWrap('ms-sector',  'Todos');
-        initWrap('ms-anio',    'Todos', actualizarOpcionesEtapa);
-        initWrap('ms-etapa',   'Todas', actualizarOpcionesAnio);
-        initWrap('ms-tipo',    'Todos');
+        initWrap('ms-anio',    'Todos', () => { actualizarOpcionesEtapa(); actualizarEtapaPorTipo(); });
+        initWrap('ms-etapa',   'Todas', () => { actualizarOpcionesAnio(); actualizarTipoPorEtapa(); });
+        initWrap('ms-tipo',    'Todos', actualizarEtapaPorTipo);
 
         // ms-escuela y ms-estatus se inicializan en sus respectivos poblar*()
         const escWrap = document.getElementById('ms-escuela');

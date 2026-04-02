@@ -146,8 +146,8 @@ document.addEventListener('datosListos', () => {
                 tickprefix: '$',
                 tickformat: '.3s',
             },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18 },
-            margin: { t: 58, r: 80, b: 68, l: 60 },
+            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.32 },
+            margin: { t: 58, r: 80, b: 110, l: 60 },
         }), plotConfig);
     }
 
@@ -201,8 +201,8 @@ document.addEventListener('datosListos', () => {
                 tickprefix: '$',
                 tickformat: '.3s',
             },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18 },
-            margin: { t: 58, r: 80, b: 68, l: 60 },
+            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.32 },
+            margin: { t: 58, r: 80, b: 110, l: 60 },
         }), plotConfig);
     }
 

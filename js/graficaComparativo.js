@@ -13,8 +13,8 @@ document.addEventListener('datosListos', () => {
 
     // Orden canónico de periodos: AÑO-E1, AÑO-E2, AÑO-EX
     const TODOS_PERIODOS = [];
-    [2021, 2022, 2023, 2024, 2025].forEach(a => {
-        ['E1', 'E2', 'EX'].forEach(e => TODOS_PERIODOS.push(a + '-' + e));
+    [2020, 2021, 2022, 2023, 2024, 2025].forEach(a => {
+        (a === 2020 ? ['E1', 'E2'] : ['E1', 'E2', 'EX']).forEach(e => TODOS_PERIODOS.push(a + '-' + e));
     });
 
     const periodosPresentes = TODOS_PERIODOS.filter(p =>
@@ -47,13 +47,14 @@ document.addEventListener('datosListos', () => {
         }
         return cnt + (d.PERIODO === p ? 1 : 0);
     }, 0);
-    const fmt     = (v, opts) => (v || 0).toLocaleString('es-MX', opts || {});
+    const fmt      = (v, opts) => (v || 0).toLocaleString('es-MX', opts || {});
+    const toLabel  = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
     // Etiqueta legible: "2022-E1" → "1ª Etapa\n2022"
     // El año va al final para evitar que Plotly interprete la etiqueta como fecha.
     const periodoLabel = p => {
         const [yr, etapa] = p.split('-');
-        const emap = { E1: '1ª Etapa', E2: '2ª Etapa', EX: 'Extraord.' };
+        const emap = { E1: '1ª etapa', E2: '2ª etapa', EX: 'Extraord.' };
         return (emap[etapa] || etapa) + '\n' + yr;
     };
 
@@ -92,7 +93,7 @@ document.addEventListener('datosListos', () => {
             textfont: { color: '#FFF', size: 12 },
             cliponaxis: false,
             hovertemplate: '<b>%{x}</b><br>%{y:,} beneficiarios<extra></extra>',
-        }], getLayout('Beneficiarios por Periodo', {
+        }], getLayout('Beneficiarios por periodo', {
             xaxis: { type: 'category', title: 'Periodo' },
             yaxis: {
                 title: 'Beneficiarios',
@@ -121,7 +122,7 @@ document.addEventListener('datosListos', () => {
             textfont: { color: '#FFF', size: 11 },
             cliponaxis: false,
             hovertemplate: '<b>%{x}</b><br>$%{y:,.0f}<extra></extra>',
-        }], getLayout('Inversión Total por Periodo', {
+        }], getLayout('Inversión total por periodo', {
             xaxis: { type: 'category', title: 'Periodo' },
             yaxis: {
                 title: 'Inversión ($)',
@@ -170,7 +171,7 @@ document.addEventListener('datosListos', () => {
                 hovertemplate: '<b>%{x}</b><br>Δ %{y:.1f}%<extra></extra>',
                 yaxis: 'y2',
             },
-        ], getLayout('Variación de Beneficiarios entre Periodos', {
+        ], getLayout('Variación de beneficiarios entre periodos', {
             xaxis: { type: 'category', title: 'Periodo' },
             yaxis:  { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
             yaxis2: {
@@ -205,10 +206,10 @@ document.addEventListener('datosListos', () => {
             fill: 'tozeroy',
             fillcolor: 'rgba(229,134,6,0.12)',
             hovertemplate: '<b>%{x}</b><br>Promedio: $%{y:,.2f}<extra></extra>',
-        }], getLayout('Importe Promedio por Periodo', {
+        }], getLayout('Importe promedio por periodo', {
             xaxis: { type: 'category', title: 'Periodo' },
             yaxis: {
-                title: 'Importe Promedio ($)',
+                title: 'Importe promedio ($)',
                 gridcolor: 'rgba(255,255,255,0.08)',
                 tickformat: '$,.0f',
                 range: [0, Math.max(...yVals) * 1.3],
@@ -251,7 +252,7 @@ document.addEventListener('datosListos', () => {
             const yVals = periodosPresentes.map(p => countTipoEnPeriodo(p, tipo));
             return {
                 type: 'bar',
-                name: tipo,
+                name: toLabel(tipo),
                 x: xLabels,
                 y: yVals,
                 marker: { color: TIPO_COLOR[tipo] || C.paleta[i % C.paleta.length] },
@@ -259,11 +260,11 @@ document.addEventListener('datosListos', () => {
                 textposition: 'outside',
                 textfont: { color: '#FFF', size: 10 },
                 cliponaxis: false,
-                hovertemplate: '<b>%{x} · ' + tipo + '</b><br>%{y:,} becas<extra></extra>',
+                hovertemplate: '<b>%{x} · ' + toLabel(tipo) + '</b><br>%{y:,} becas<extra></extra>',
             };
         });
 
-        Plotly.newPlot(el5, traces, getLayout('Becas por Tipo y Periodo', {
+        Plotly.newPlot(el5, traces, getLayout('Becas por tipo y periodo', {
             barmode: 'group',
             xaxis: { type: 'category', title: 'Periodo' },
             yaxis: { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
@@ -307,7 +308,7 @@ document.addEventListener('datosListos', () => {
             });
             return {
                 type: 'bar',
-                name: tipo,
+                name: toLabel(tipo),
                 x: xLabels,
                 y: yVals,
                 marker: { color: TIPO_COLOR[tipo] || C.paleta[i % C.paleta.length] },
@@ -315,11 +316,11 @@ document.addEventListener('datosListos', () => {
                 textposition: 'inside',
                 insidetextanchor: 'middle',
                 textfont: { color: '#FFF', size: 10 },
-                hovertemplate: '<b>%{x} · ' + tipo + '</b><br>%{y:.1f}%<extra></extra>',
+                hovertemplate: '<b>%{x} · ' + toLabel(tipo) + '</b><br>%{y:.1f}%<extra></extra>',
             };
         });
 
-        Plotly.newPlot(el6, traces, getLayout('Composición del Mix de Tipos de Beca por Periodo', {
+        Plotly.newPlot(el6, traces, getLayout('Composición del mix de tipos de beca por periodo', {
             barmode: 'stack',
             xaxis: { type: 'category', title: 'Periodo' },
             yaxis: {

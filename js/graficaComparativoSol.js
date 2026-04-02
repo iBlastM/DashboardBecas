@@ -36,6 +36,8 @@ document.addEventListener('datosListos', () => {
         ? +(statsAnio.reduce((s, v) => s + v.tasa, 0) / statsAnio.length).toFixed(1)
         : 0;
 
+    const toLabel = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
     // ═══════════════════════════════════════════════════════════════════════
     // 1. Total Solicitantes por Año (barras apiladas)
     // ═══════════════════════════════════════════════════════════════════════
@@ -55,7 +57,7 @@ document.addEventListener('datosListos', () => {
                 hovertemplate: '<b>%{x}</b><br>Aprobados: %{y:,}<extra></extra>',
             },
             {
-                type: 'bar', name: 'No Aprobados',
+                type: 'bar', name: 'No aprobados',
                 x: aniosPresentes, y: noAprobados,
                 marker: { color: '#EF4444' },
                 hovertemplate: '<b>%{x}</b><br>No aprobados: %{y:,}<extra></extra>',
@@ -69,7 +71,7 @@ document.addEventListener('datosListos', () => {
                 textfont: { color: '#FFF', size: 12, family: C.fuente },
                 showlegend: false, hoverinfo: 'none',
             },
-        ], getLayout('Solicitantes por Año · Aprobados vs No Aprobados', {
+        ], getLayout('Solicitantes por año · aprobados vs no aprobados', {
             barmode: 'stack',
             xaxis: { type: 'category', title: 'Año' },
             yaxis: { title: 'Solicitantes', gridcolor: 'rgba(255,255,255,0.08)' },
@@ -106,10 +108,10 @@ document.addEventListener('datosListos', () => {
                 textfont: { color: '#FFF', size: 12 },
                 hovertemplate: '<b>%{x}</b><br>Tasa de aprobación: %{y:.1f}%<extra></extra>',
             },
-        ], getLayout('Tasa de Aprobación por Año', {
+        ], getLayout('Tasa de aprobación por año', {
             xaxis: { type: 'category', title: 'Año' },
             yaxis: {
-                title: '% Aprobados / Total',
+                title: '% aprobados / total',
                 gridcolor: 'rgba(255,255,255,0.08)',
                 range: [0, 115],
             },
@@ -146,9 +148,9 @@ document.addEventListener('datosListos', () => {
 
         const STATUS_LABELS = {
             'CE-APROBADO':    'Aprobado',
-            'CON RECHAZOS':   'Con Rechazos',
+            'CON RECHAZOS':   'Con rechazos',
             'CE-CON RECHAZO': 'Rechazo (CE)',
-            'CE-PENDIENTE':   'Pendiente Histórico',
+            'CE-PENDIENTE':   'Pendiente histórico',
             'PENDIENTE':      'Pendiente',
             'CANCELADO':      'Cancelado',
         };
@@ -165,22 +167,22 @@ document.addEventListener('datosListos', () => {
 
         const traces = todosStatus.map(status => ({
             type: 'bar',
-            name: STATUS_LABELS[status] || status,
+            name: STATUS_LABELS[status] || toLabel(status),
             x: aniosPresentes,
             y: aniosPresentes.map(a =>
                 data.filter(d => getAnio(d) === a && d.STATUS === status).length
             ),
             marker: { color: STATUS_COLORS[status] || C.paleta[4] },
             hovertemplate: '<b>%{x}</b><br>' +
-                (STATUS_LABELS[status] || status) + ': %{y:,}<extra></extra>',
+                (STATUS_LABELS[status] || toLabel(status)) + ': %{y:,}<extra></extra>',
         }));
 
-        Plotly.newPlot(el3, traces, getLayout('Distribución de Estatus por Año', {
+        Plotly.newPlot(el3, traces, getLayout('Distribución de estatus por año', {
             barmode: 'stack',
-            xaxis: { type: 'category', title: 'Año' },
+            xaxis: { type: 'category', title: { text: 'Año', standoff: 18 } },
             yaxis: { title: 'Solicitantes', gridcolor: 'rgba(255,255,255,0.08)' },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.22 },
-            margin: { t: 58, r: 18, b: 80, l: 72 },
+            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.32 },
+            margin: { t: 58, r: 18, b: 110, l: 72 },
         }), plotConfig);
     }
 
@@ -233,7 +235,7 @@ document.addEventListener('datosListos', () => {
                 textfont: { color: C.naranja, size: 10, family: C.fuente },
                 showlegend: false, hoverinfo: 'none',
             },
-        ], getLayout('Primer Intento vs Solicitantes Reincidentes por Año', {
+        ], getLayout('Primer intento vs solicitantes reincidentes por año', {
             barmode: 'group',
             xaxis: { type: 'category', title: 'Año' },
             yaxis: { title: 'Solicitantes', gridcolor: 'rgba(255,255,255,0.08)' },
@@ -254,7 +256,7 @@ document.addEventListener('datosListos', () => {
 
         const traces = niveles.map((nivel, i) => ({
             type: 'bar',
-            name: nivel,
+            name: toLabel(nivel),
             x: aniosPresentes,
             y: aniosPresentes.map(a => {
                 const sub = data.filter(d => getAnio(d) === a && d.NIVEL_EDUCATIVO === nivel);
@@ -271,14 +273,14 @@ document.addEventListener('datosListos', () => {
             textposition: 'outside',
             textfont: { color: '#FFF', size: 10 },
             cliponaxis: false,
-            hovertemplate: '<b>%{x} · ' + nivel + '</b><br>Tasa: %{y:.1f}%<extra></extra>',
+            hovertemplate: '<b>%{x} · ' + toLabel(nivel) + '</b><br>Tasa: %{y:.1f}%<extra></extra>',
         }));
 
-        Plotly.newPlot(el5, traces, getLayout('Tasa de Aprobación por Nivel × Año', {
+        Plotly.newPlot(el5, traces, getLayout('Tasa de aprobación por nivel × año', {
             barmode: 'group',
             xaxis: { type: 'category', title: 'Año' },
             yaxis: {
-                title: '% Aprobados',
+                title: '% aprobados',
                 gridcolor: 'rgba(255,255,255,0.08)',
                 range: [0, 120],
             },

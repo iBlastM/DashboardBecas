@@ -168,6 +168,44 @@
         updateTrigger('ms-anio', 'Todos');
     }
 
+    // ── Deshabilitar UNIVERSIDAD cuando Extraordinaria está seleccionada ────────
+    function actualizarTipoPorEtapa() {
+        const wrap = document.getElementById('ms-tipo');
+        if (!wrap) return;
+        const etapasSeleccionadas = getSelected('ms-etapa');
+        const tieneEX = etapasSeleccionadas.includes('EXTRATEMPORANEA');
+        wrap.querySelectorAll('.ms-opt').forEach(opt => {
+            const cb = opt.querySelector('input');
+            if (!cb || cb.value !== 'UNIVERSIDAD') return;
+            if (tieneEX) {
+                opt.classList.add('ms-disabled');
+                cb.checked = false;
+            } else {
+                opt.classList.remove('ms-disabled');
+            }
+        });
+        updateTrigger('ms-tipo', 'Todos');
+    }
+
+    // ── Deshabilitar Extraordinaria cuando UNIVERSIDAD está seleccionada ────────
+    function actualizarEtapaPorTipo() {
+        const wrap = document.getElementById('ms-etapa');
+        if (!wrap) return;
+        const tiposSeleccionados = getSelected('ms-tipo');
+        const tieneUniversidad = tiposSeleccionados.includes('UNIVERSIDAD');
+        wrap.querySelectorAll('.ms-opt[data-etapa="EX"]').forEach(opt => {
+            const cb = opt.querySelector('input');
+            if (!cb) return;
+            if (tieneUniversidad) {
+                opt.classList.add('ms-disabled');
+                cb.checked = false;
+            } else {
+                opt.classList.remove('ms-disabled');
+            }
+        });
+        updateTrigger('ms-etapa', 'Todas');
+    }
+
     // ── Poblar dropdown de municipios ─────────────────────────────────────────
     function poblarMunicipios(data) {
         const panel = document.querySelector('#ms-municipio .ms-panel');
@@ -338,6 +376,8 @@
         }
         actualizarOpcionesEtapa();
         actualizarOpcionesAnio();
+        actualizarTipoPorEtapa();
+        actualizarEtapaPorTipo();
         filtrarEscuelasSegunMunicipio();
         aplicar();
     }
@@ -351,10 +391,10 @@
         poblarMunicipios(window.dashDataFull);
         poblarEscuelas(window.dashDataFull);
 
-        initWrap('ms-tipo',      'Todos');
+        initWrap('ms-tipo',      'Todos', actualizarEtapaPorTipo);
         initWrap('ms-sector',    'Todos');
-        initWrap('ms-anio',      'Todos', actualizarOpcionesEtapa);
-        initWrap('ms-etapa',     'Todas', actualizarOpcionesAnio);
+        initWrap('ms-anio',      'Todos', () => { actualizarOpcionesEtapa(); actualizarEtapaPorTipo(); });
+        initWrap('ms-etapa',     'Todas', () => { actualizarOpcionesAnio(); actualizarTipoPorEtapa(); });
         // ms-municipio y ms-escuela se inicializan en sus funciones poblar*
         // pero sí necesitamos el toggle del botón
         ['ms-municipio', 'ms-escuela'].forEach(wrapId => {

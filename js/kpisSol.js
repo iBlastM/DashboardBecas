@@ -9,7 +9,7 @@ document.addEventListener('datosListos', () => {
 
     const ids = [
         'kpi-total-val','kpi-beneficiarios-val','kpi-tasa-val','kpi-inversion-val',
-        'kpi-promedio-val','kpi-edad-val','kpi-publico-val','kpi-privado-val',
+        'kpi-promedio-val','kpi-edad-val',
     ];
 
     if (!total) {
@@ -31,13 +31,6 @@ document.addEventListener('datosListos', () => {
 
     const edadProm = data.reduce((s, d) => s + d.EDAD, 0) / total;
 
-    const publico = data.filter(d =>
-        d.SECTOR && d.SECTOR.toUpperCase().startsWith('PUBL')
-    ).length;
-    const privado = data.filter(d =>
-        d.SECTOR && d.SECTOR.toUpperCase().startsWith('PRIV')
-    ).length;
-
     const f = (v, opts) => (v || 0).toLocaleString('es-MX', opts || {});
 
     document.getElementById('kpi-total-val').textContent        = f(total);
@@ -46,6 +39,4 @@ document.addEventListener('datosListos', () => {
     document.getElementById('kpi-inversion-val').textContent     = '$' + f(inversion, { maximumFractionDigits: 0 });
     document.getElementById('kpi-promedio-val').textContent      = '$' + f(promedio,  { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     document.getElementById('kpi-edad-val').textContent          = f(edadProm, { maximumFractionDigits: 1 }) + ' años';
-    document.getElementById('kpi-publico-val').textContent       = f(publico) + ' (' + ((publico / total) * 100).toFixed(1) + '%)';
-    document.getElementById('kpi-privado-val').textContent       = f(privado) + ' (' + ((privado / total) * 100).toFixed(1) + '%)';
 });
