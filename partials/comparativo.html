@@ -1,6 +1,6 @@
 <h2 class="section-title">Comparativo por Periodo</h2>
 
-<!-- Fila 1: Beneficiarios por Periodo · Inversión Total por Periodo -->
+<!-- Fila 1: Beneficiarios por Etapa · Inversión Total por Periodo -->
 <div class="charts-grid cols-2">
     <div class="chart-card">
         <div id="chart-periodo-beneficiarios" class="chart-container"></div>
@@ -20,16 +20,60 @@
     </div>
 </div>
 
-<!-- Fila 3: Beneficiarios por Tipo de Beca y Periodo (ancho completo) -->
+<!-- Fila 3: Comparativa de Becas Otorgadas por Tipo y Etapa (ancho completo) -->
 <div class="charts-grid cols-1">
     <div class="chart-card">
+        <div class="view-toggle">
+            <button class="vt-btn active" data-view="comparativa">Comparativa</button>
+        </div>
         <div id="chart-periodo-tipo-beca" class="chart-container chart-tall"></div>
     </div>
 </div>
 
-<!-- Fila 4: Composición del Mix de Tipos de Beca (ancho completo) -->
+<!-- Modal: Tipo de Beca (Gráfica 5) -->
+<div id="modal-tipo-beca" class="rng-modal-overlay" hidden>
+    <div class="rng-modal">
+        <div class="rng-modal-header">
+            <span class="rng-modal-title">Seleccionar Tipo de Beca</span>
+            <button class="rng-modal-close">×</button>
+        </div>
+        <div class="rng-modal-actions">
+            <button class="rng-action-btn" data-action="all">Seleccionar todos</button>
+            <button class="rng-action-btn" data-action="none">Limpiar selección</button>
+        </div>
+        <div class="rng-modal-checks" id="modal-tipo-beca-checks"></div>
+        <div class="rng-modal-footer">
+            <button class="rng-footer-btn rng-cancel-btn">Cancelar</button>
+            <button class="rng-footer-btn rng-apply-btn">Aplicar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Fila 4: Composición de Tipos de Becas por Etapa (ancho completo) -->
 <div class="charts-grid cols-1">
     <div class="chart-card">
+        <div class="view-toggle">
+            <button class="vt-btn active" data-view="comparativa">Comparativa</button>
+        </div>
         <div id="chart-periodo-mix" class="chart-container chart-xl"></div>
+    </div>
+</div>
+
+<!-- Modal: Etapas (Gráfica 6 Composición) -->
+<div id="modal-etapas-mix" class="rng-modal-overlay" hidden>
+    <div class="rng-modal">
+        <div class="rng-modal-header">
+            <span class="rng-modal-title">Seleccionar Etapas</span>
+            <button class="rng-modal-close">×</button>
+        </div>
+        <div class="rng-modal-actions">
+            <button class="rng-action-btn" data-action="all">Seleccionar todos</button>
+            <button class="rng-action-btn" data-action="none">Limpiar selección</button>
+        </div>
+        <div class="rng-modal-checks" id="modal-etapas-mix-checks"></div>
+        <div class="rng-modal-footer">
+            <button class="rng-footer-btn rng-cancel-btn">Cancelar</button>
+            <button class="rng-footer-btn rng-apply-btn">Aplicar</button>
+        </div>
     </div>
 </div>

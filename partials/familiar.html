@@ -16,7 +16,47 @@
 <!-- Fila 2: Rangos de Edades Tutor · Brecha Generacional -->
 <div class="charts-grid cols-2">
     <div class="chart-card">
+        <div class="view-toggle" id="vt-rangos">
+            <button class="vt-btn active" data-view="top">Top</button>
+            <button class="vt-btn" data-view="comparativa">Comparativa</button>
+            <select class="top-select" id="rangos-top-n" style="margin-left:8px">
+                <option value="3">Top 3</option>
+                <option value="5" selected>Top 5</option>
+                <option value="7">Top 7</option>
+                <option value="10">Top 10</option>
+            </select>
+        </div>
         <div id="chart-edad-tutor-rangos" class="chart-container chart-tall"></div>
+
+        <!-- Modal de selección de rangos -->
+        <div id="modal-rangos" class="rng-modal-overlay" hidden>
+            <div class="rng-modal">
+                <div class="rng-modal-header">
+                    <span class="rng-modal-title">Seleccionar rangos de edad</span>
+                    <button class="rng-modal-close" id="rng-cancel" aria-label="Cerrar">&times;</button>
+                </div>
+                <div class="rng-modal-actions">
+                    <button class="rng-action-btn" id="rng-all">Seleccionar todos</button>
+                    <button class="rng-action-btn" id="rng-none">Limpiar selección</button>
+                </div>
+                <div class="rng-modal-checks" id="rng-checks">
+                    <label class="rng-opt"><input type="checkbox" value="18-24" checked><span>18-24 años</span></label>
+                    <label class="rng-opt"><input type="checkbox" value="25-29" checked><span>25-29 años</span></label>
+                    <label class="rng-opt"><input type="checkbox" value="30-34" checked><span>30-34 años</span></label>
+                    <label class="rng-opt"><input type="checkbox" value="35-39" checked><span>35-39 años</span></label>
+                    <label class="rng-opt"><input type="checkbox" value="40-44" checked><span>40-44 años</span></label>
+                    <label class="rng-opt"><input type="checkbox" value="45-49" checked><span>45-49 años</span></label>
+                    <label class="rng-opt"><input type="checkbox" value="50-54" checked><span>50-54 años</span></label>
+                    <label class="rng-opt"><input type="checkbox" value="55-59" checked><span>55-59 años</span></label>
+                    <label class="rng-opt"><input type="checkbox" value="60-64" checked><span>60-64 años</span></label>
+                    <label class="rng-opt"><input type="checkbox" value="65+" checked><span>65+ años</span></label>
+                </div>
+                <div class="rng-modal-footer">
+                    <button class="rng-footer-btn rng-cancel-btn" id="rng-cancel-btn">Cancelar</button>
+                    <button class="rng-footer-btn rng-apply-btn" id="rng-apply-btn">Aplicar</button>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="chart-card">
         <div id="chart-brecha-generacional" class="chart-container chart-tall"></div>
@@ -32,6 +72,14 @@
                 <option value="5">Top 5</option>
                 <option value="10">Top 10</option>
                 <option value="15" selected>Top 15</option>
+            </select>
+            <span class="top-selector-label" style="margin-left:10px">Percentil ≥:</span>
+            <select class="top-select jf-percentile">
+                <option value="0" selected>Todos</option>
+                <option value="50">P50</option>
+                <option value="75">P75</option>
+                <option value="90">P90</option>
+                <option value="95">P95</option>
             </select>
         </div>
         <div id="chart-jefatura-femenina" class="chart-container chart-xxl"></div>

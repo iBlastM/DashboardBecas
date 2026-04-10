@@ -1,6 +1,6 @@
 <h2 class="section-title">Académico</h2>
 
-<!-- Fila 1: Becas por Nivel · Penetración Sector · Beneficiarios por Grado -->
+<!-- Fila 1: Becas por Nivel · Cobertura por Sector · Beneficiarios por Grado -->
 <div class="charts-grid cols-3">
     <div class="chart-card">
         <div id="chart-becas-nivel" class="chart-container"></div>
@@ -13,35 +13,80 @@
     </div>
 </div>
 
-<!-- Fila 2: Diversidad Escolar por Sector · por Colonia -->
+<!-- Fila 2: Rangos de Promedio · Promedio por Nivel -->
 <div class="charts-grid cols-2">
     <div class="chart-card">
-        <div id="chart-diversidad-sector" class="chart-container chart-tall"></div>
+        <div id="chart-rangos-promedio" class="chart-container chart-tall"></div>
     </div>
     <div class="chart-card">
-        <div class="top-selector" data-chart="chart-diversidad-colonia">
-            <span class="top-selector-label">Mostrar:</span>
-            <select class="top-select">
-                <option value="5">Top 5</option>
-                <option value="10">Top 10</option>
-                <option value="15" selected>Top 15</option>
-            </select>
-        </div>
-        <div id="chart-diversidad-colonia" class="chart-container chart-tall"></div>
+        <div id="chart-promedio-nivel" class="chart-container chart-tall"></div>
     </div>
 </div>
 
-<!-- Fila 3: Top Escuelas (ancho completo) -->
-<div class="charts-grid cols-1">
+<!-- Fila 3: Delegaciones con Promedios Más Altos · Escuelas con Promedios Más Altos -->
+<div class="charts-grid cols-2">
     <div class="chart-card">
-        <div class="top-selector" data-chart="chart-top-escuelas">
+        <div class="top-selector" data-chart="chart-delegaciones-promedio">
             <span class="top-selector-label">Mostrar:</span>
             <select class="top-select">
                 <option value="5">Top 5</option>
-                <option value="10">Top 10</option>
-                <option value="15" selected>Top 15</option>
+                <option value="10" selected>Top 10</option>
+                <option value="15">Top 15</option>
             </select>
         </div>
+        <div id="chart-delegaciones-promedio" class="chart-container chart-tall"></div>
+    </div>
+    <div class="chart-card">
+        <div class="top-selector" data-chart="chart-escuelas-promedio">
+            <span class="top-selector-label">Mostrar:</span>
+            <select class="top-select">
+                <option value="5">Top 5</option>
+                <option value="10" selected>Top 10</option>
+                <option value="15">Top 15</option>
+            </select>
+        </div>
+        <div id="chart-escuelas-promedio" class="chart-container chart-tall"></div>
+    </div>
+</div>
+
+<!-- Fila 4: Escuelas con Mayor Número de Beneficiarios (ancho completo) -->
+<div class="charts-grid cols-1">
+    <div class="chart-card">
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:8px 14px 0;">
+            <div class="view-toggle" id="vt-top-escuelas" style="padding:0;">
+                <button class="vt-btn active" data-view="top">Top</button>
+                <button class="vt-btn" data-view="comparativa">Comparativa</button>
+                <select class="top-select" id="top-escuelas-top-n" style="margin-left:8px">
+                    <option value="5">Top 5</option>
+                    <option value="10">Top 10</option>
+                    <option value="15" selected>Top 15</option>
+                </select>
+            </div>
+        </div>
         <div id="chart-top-escuelas" class="chart-container chart-xxl"></div>
+
+        <!-- Modal de selección de escuelas -->
+        <div id="modal-top-escuelas" class="rng-modal-overlay" hidden>
+            <div class="rng-modal">
+                <div class="rng-modal-header">
+                    <span class="rng-modal-title">Seleccionar escuelas</span>
+                    <button class="rng-modal-close" id="esc-close" aria-label="Cerrar">&times;</button>
+                </div>
+                <div class="rng-modal-actions">
+                    <button class="rng-action-btn" id="esc-all">Seleccionar todos</button>
+                    <button class="rng-action-btn" id="esc-none">Limpiar selección</button>
+                </div>
+                <div style="padding:0 18px 6px;">
+                    <input type="search" id="esc-search" class="rng-search-input" placeholder="Buscar escuela..." autocomplete="off">
+                </div>
+                <div class="rng-modal-checks" id="esc-checks">
+                    <!-- Generado dinámicamente por JS -->
+                </div>
+                <div class="rng-modal-footer">
+                    <button class="rng-footer-btn rng-cancel-btn" id="esc-cancel-btn">Cancelar</button>
+                    <button class="rng-footer-btn rng-apply-btn" id="esc-apply-btn">Aplicar</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

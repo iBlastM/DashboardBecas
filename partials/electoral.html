@@ -1,12 +1,12 @@
 <h2 class="section-title">Electoral</h2>
 
-<!-- Distrito Local y Distrito Federal — lado a lado -->
+<!-- Distrito Federal y Distrito Local — lado a lado (Federal primero) -->
 <div class="charts-grid cols-2">
     <div class="chart-card">
-        <div id="chart-distrito-local-pie" class="chart-container chart-lg"></div>
+        <div id="chart-distrito-federal-pie" class="chart-container chart-lg"></div>
     </div>
     <div class="chart-card">
-        <div id="chart-distrito-federal-pie" class="chart-container chart-lg"></div>
+        <div id="chart-distrito-local-pie" class="chart-container chart-lg"></div>
     </div>
 </div>
 
@@ -20,32 +20,48 @@
     </div>
 </div>
 
-<!-- Top Secciones Electorales por Beneficiarios -->
+<!-- Mapa de Secciones Electorales -->
 <div class="charts-grid cols-1">
-    <div class="chart-card">
-        <div class="top-selector" data-chart="chart-top-secciones">
-            <span class="top-selector-label">Mostrar:</span>
-            <select class="top-select">
+    <div class="chart-card" style="position:relative;">
+        <div id="sec-metrica-toggle" class="view-toggle">
+            <button class="vt-btn active" data-metrica="beneficiarios">Beneficiarios</button>
+            <button class="vt-btn" data-metrica="inversion">Inversión</button>
+        </div>
+        <div id="sec-topcomp-toggle" class="view-toggle" style="margin-top:4px;">
+            <button class="vt-btn active" data-view="top">Top</button>
+            <button class="vt-btn" data-view="comparativa">Comparativa</button>
+            <select class="top-select" id="sec-mapa-top-n" style="margin-left:6px">
                 <option value="5">Top 5</option>
                 <option value="10">Top 10</option>
                 <option value="15" selected>Top 15</option>
             </select>
         </div>
-        <div id="chart-top-secciones" class="chart-container chart-xxl"></div>
+        <div style="position:relative;">
+            <div id="chart-mapa-secciones" class="chart-container chart-xxl"></div>
+            <div style="position:absolute;top:120px;right:130px;z-index:500;display:flex;flex-direction:column;gap:4px;">
+                <button id="sec-mapa-zoom-in"    class="vt-btn" title="Acercar">＋</button>
+                <button id="sec-mapa-zoom-out"   class="vt-btn" title="Alejar">－</button>
+                <button id="sec-mapa-fullscreen" class="vt-btn" title="Pantalla completa">⛶</button>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Inversión por Sección Electoral -->
-<div class="charts-grid cols-1">
-    <div class="chart-card">
-        <div class="top-selector" data-chart="chart-seccion-inversion">
-            <span class="top-selector-label">Mostrar:</span>
-            <select class="top-select">
-                <option value="5">Top 5</option>
-                <option value="10">Top 10</option>
-                <option value="15" selected>Top 15</option>
-            </select>
+<!-- Modal: Secciones Electorales -->
+<div id="modal-mapa-sec" class="rng-modal-overlay" hidden>
+    <div class="rng-modal">
+        <div class="rng-modal-header">
+            <span class="rng-modal-title">Seleccionar Secciones</span>
+            <button class="rng-modal-close">×</button>
         </div>
-        <div id="chart-seccion-inversion" class="chart-container chart-xl"></div>
+        <div class="rng-modal-actions">
+            <button class="rng-action-btn" data-action="all">Seleccionar todos</button>
+            <button class="rng-action-btn" data-action="none">Limpiar selección</button>
+        </div>
+        <div class="rng-modal-checks" id="modal-mapa-sec-checks"></div>
+        <div class="rng-modal-footer">
+            <button class="rng-footer-btn rng-cancel-btn">Cancelar</button>
+            <button class="rng-footer-btn rng-apply-btn">Aplicar</button>
+        </div>
     </div>
 </div>

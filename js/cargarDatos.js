@@ -36,6 +36,7 @@ async function cargarDatos() {
             d.EDAD               = Number(d.EDAD)               || 0;
             d.EDAD_TUTOR         = Number(d.EDAD_TUTOR)         || 0;
             d.GRADO              = Number(d.GRADO)              || 0;
+            d.PROMEDIO           = d.PROMEDIO != null ? Number(d.PROMEDIO) : null;
             d.NUM_BECAS          = Number(d.NUM_BECAS)          || 1;
             d.AÑO                = String(d.AÑO                 || '');
             d.SECCION_ELECTORAL  = d.SECCION_ELECTORAL  != null ? Number(d.SECCION_ELECTORAL)  : null;

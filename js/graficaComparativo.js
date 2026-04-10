@@ -1,17 +1,16 @@
-// ── GRAFICA_COMPARATIVO.JS ── DashboardBecas ──────────────────────────────────
+﻿// â”€â”€ GRAFICA_COMPARATIVO.JS â”€â”€ DashboardBecas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Gráficas de la pestaña Comparativo (datos por BENEFICIARIO ÚNICO):
-//   1. Beneficiarios únicos por Periodo (barras) — un beneficiario en múltiples
-//      periodos cuenta en cada uno de ellos
-//   2. Inversión Total por Periodo (barras) — suma de BECAS.IMPORTE del periodo
-//   3. Variación de Beneficiarios entre Periodos (línea + delta Δ%)
-//   4. Importe Promedio por Beca por Periodo (línea)
-//   5. Becas por Tipo × Periodo (barras agrupadas)
-//   6. Composición del Mix de Tipos de Beca por Periodo (barras 100% apiladas)
+//   1. Beneficiarios únicos por Etapa (barras)
+//   2. Inversión Total por Etapa en mdp (barras)
+//   3. Variación de Beneficiarios por Etapas (línea + delta Δ%)
+//   4. Variación de Importe Promedio por Etapa (línea)
+//   5. Comparativa de Becas Otorgadas por Tipo y Etapa (barras agrupadas + Top/Comparativa)
+//   6. Composición de Tipos de Becas por Etapa (barras 100% apiladas + Top/Comparativa)
 
 document.addEventListener('datosListos', () => {
     const data = window.dashData;
 
-    // Orden canónico de periodos: AÑO-E1, AÑO-E2, AÑO-EX
+    // Orden canónico de periodos: AÃ‘O-E1, AÃ‘O-E2, AÃ‘O-EX
     const TODOS_PERIODOS = [];
     [2020, 2021, 2022, 2023, 2024, 2025].forEach(a => {
         (a === 2020 ? ['E1', 'E2'] : ['E1', 'E2', 'EX']).forEach(e => TODOS_PERIODOS.push(a + '-' + e));
@@ -47,26 +46,25 @@ document.addEventListener('datosListos', () => {
         }
         return cnt + (d.PERIODO === p ? 1 : 0);
     }, 0);
-    const fmt      = (v, opts) => (v || 0).toLocaleString('es-MX', opts || {});
-    const toLabel  = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
-    // Etiqueta legible: "2022-E1" → "1ª Etapa\n2022"
-    // El año va al final para evitar que Plotly interprete la etiqueta como fecha.
+    const fmt     = (v, opts) => (v || 0).toLocaleString('es-MX', opts || {});
+    const toLabel = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+    // Etiqueta corta: "2022-E1" â†’ "1E 2022"
     const periodoLabel = p => {
         const [yr, etapa] = p.split('-');
-        const emap = { E1: '1ª etapa', E2: '2ª etapa', EX: 'Extraord.' };
-        return (emap[etapa] || etapa) + '\n' + yr;
+        const emap = { E1: '1E', E2: '2E', EX: 'EX' };
+        return (emap[etapa] || etapa) + ' ' + yr;
     };
 
     const xLabels = periodosPresentes.map(periodoLabel);
 
     // Colores por periodo
     const PERIODO_COLORS = periodosPresentes.map((_, i) => C.paleta[i % C.paleta.length]);
-    const colorP = p => PERIODO_COLORS[periodosPresentes.indexOf(p)] || C.paleta[0];
 
     // Pre-calcular métricas por periodo
     const nPeriodo    = {};  // beneficiarios únicos con beca en ese periodo
-    const invPeriodo  = {};  // inversión real del periodo (desde BECAS detalle)
+    const invPeriodo  = {};  // inversión real del periodo (desde BECAS detalle) en pesos
     const promPeriodo = {};  // importe promedio por beca en el periodo
     periodosPresentes.forEach(p => {
         nPeriodo[p]    = filterP(p).length;
@@ -75,9 +73,9 @@ document.addEventListener('datosListos', () => {
         promPeriodo[p] = becasCnt > 0 ? invPeriodo[p] / becasCnt : 0;
     });
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // 1. Beneficiarios por Periodo (barras)
-    // ═══════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 1. Beneficiarios por Etapa (barras)
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     const el1 = document.getElementById('chart-periodo-beneficiarios');
     if (el1) {
         el1.classList.remove('loading');
@@ -93,54 +91,57 @@ document.addEventListener('datosListos', () => {
             textfont: { color: '#FFF', size: 12 },
             cliponaxis: false,
             hovertemplate: '<b>%{x}</b><br>%{y:,} beneficiarios<extra></extra>',
-        }], getLayout('Beneficiarios por periodo', {
-            xaxis: { type: 'category', title: 'Periodo' },
+        }], getLayout('Beneficiarios por Etapa', {
+            xaxis: { type: 'category', title: '' },
             yaxis: {
-                title: 'Beneficiarios',
+                title: '',
                 gridcolor: 'rgba(255,255,255,0.08)',
                 range: [0, Math.max(...yVals) * 1.25],
+                tickformat: ',.0f',
             },
             margin: { t: 58, r: 18, b: 68, l: 72 },
         }), plotConfig);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // 2. Inversión Total por Periodo (barras)
-    // ═══════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 2. Inversión Total por Periodo (mdp) â€” valores en millones de pesos
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     const el2 = document.getElementById('chart-periodo-inversion');
     if (el2) {
         el2.classList.remove('loading');
-        const yVals = periodosPresentes.map(p => invPeriodo[p]);
+        // Convertir a millones de pesos
+        const yVals = periodosPresentes.map(p => +(invPeriodo[p] / 1e6).toFixed(2));
 
         Plotly.newPlot(el2, [{
             type: 'bar',
             x: xLabels,
             y: yVals,
             marker: { color: PERIODO_COLORS },
-            text: yVals.map(v => '$' + fmt(v, { maximumFractionDigits: 0 })),
+            text: yVals.map(v => v.toFixed(1) + ' mdp'),
             textposition: 'outside',
             textfont: { color: '#FFF', size: 11 },
             cliponaxis: false,
-            hovertemplate: '<b>%{x}</b><br>$%{y:,.0f}<extra></extra>',
-        }], getLayout('Inversión total por periodo', {
-            xaxis: { type: 'category', title: 'Periodo' },
+            hovertemplate: '<b>%{x}</b><br>%{y:.2f} mdp<extra></extra>',
+        }], getLayout('Inversión Total por Periodo (mdp)', {
+            xaxis: { type: 'category', title: '' },
             yaxis: {
-                title: 'Inversión ($)',
+                title: '',
                 gridcolor: 'rgba(255,255,255,0.08)',
-                tickformat: '$,.0f',
+                tickformat: '.1f',
+                ticksuffix: ' mdp',
                 range: [0, Math.max(...yVals) * 1.25],
             },
             margin: { t: 58, r: 18, b: 68, l: 100 },
         }), plotConfig);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // 3. Variación de Beneficiarios entre Periodos (Δ % línea)
-    // ═══════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 3. Variación de Beneficiarios por Etapas (Δ % línea)
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     const el3 = document.getElementById('chart-periodo-variacion');
     if (el3) {
         el3.classList.remove('loading');
-        const yAbs  = periodosPresentes.map(p => nPeriodo[p]);
+        const yAbs   = periodosPresentes.map(p => nPeriodo[p]);
         const yDelta = [null]; // primer periodo no tiene delta anterior
         for (let i = 1; i < periodosPresentes.length; i++) {
             const prev = nPeriodo[periodosPresentes[i - 1]];
@@ -167,27 +168,35 @@ document.addEventListener('datosListos', () => {
                 },
                 text: yDelta.map(v => v == null ? '' : (v > 0 ? '+' : '') + v + '%'),
                 textposition: 'top center',
-                textfont: { color: C.naranja, size: 11 },
+                textfont: {
+                    // Negativo en rojo, positivo/neutro en naranja
+                    color: yDelta.map(v => v == null ? C.naranja : v < 0 ? '#EF4444' : C.naranja),
+                    size: 11,
+                },
                 hovertemplate: '<b>%{x}</b><br>Δ %{y:.1f}%<extra></extra>',
                 yaxis: 'y2',
             },
-        ], getLayout('Variación de beneficiarios entre periodos', {
-            xaxis: { type: 'category', title: 'Periodo' },
-            yaxis:  { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
+        ], getLayout('Variación de Beneficiarios por Etapas', {
+            xaxis: { type: 'category', title: '' },
+            yaxis:  {
+                title: '',
+                gridcolor: 'rgba(255,255,255,0.08)',
+                tickformat: ',.0f',
+            },
             yaxis2: {
-                title: 'Variación (%)',
+                title: '',
                 overlaying: 'y', side: 'right',
                 showgrid: false,
                 zeroline: true, zerolinecolor: 'rgba(255,255,255,0.3)',
             },
-            margin: { t: 58, r: 80, b: 115, l: 72 },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.32 },
+            showlegend: false,
+            margin: { t: 58, r: 80, b: 80, l: 72 },
         }), plotConfig);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // 4. Importe Promedio por Periodo (línea)
-    // ═══════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 4. Variación de Importe Promedio por Etapa (línea)
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     const el4 = document.getElementById('chart-periodo-promedio');
     if (el4) {
         el4.classList.remove('loading');
@@ -206,21 +215,23 @@ document.addEventListener('datosListos', () => {
             fill: 'tozeroy',
             fillcolor: 'rgba(229,134,6,0.12)',
             hovertemplate: '<b>%{x}</b><br>Promedio: $%{y:,.2f}<extra></extra>',
-        }], getLayout('Importe promedio por periodo', {
-            xaxis: { type: 'category', title: 'Periodo' },
+        }], getLayout('Variación de Importe Promedio por Etapa', {
+            xaxis: { type: 'category', title: '', automargin: true },
             yaxis: {
-                title: 'Importe promedio ($)',
+                title: '',
                 gridcolor: 'rgba(255,255,255,0.08)',
                 tickformat: '$,.0f',
                 range: [0, Math.max(...yVals) * 1.3],
             },
-            margin: { t: 58, r: 18, b: 68, l: 100 },
+            margin: { t: 58, r: 80, b: 68, l: 100 },
         }), plotConfig);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // 5. Beneficiarios por Tipo de Beca × Periodo (barras agrupadas)
-    // ═══════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 5. Comparativa de Becas Otorgadas por Tipo y Etapa
+    //    Top: todas los tipos Â· Comparativa: selección de tipos vía modal
+    //    Si se selecciona un solo tipo, agrega línea Δ% entre periodos
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     const el5 = document.getElementById('chart-periodo-tipo-beca');
     if (el5) {
         el5.classList.remove('loading');
@@ -233,7 +244,7 @@ document.addEventListener('datosListos', () => {
             'UNIVERSIDAD':           '#A855F7',
         };
 
-        // Con beneficiarios únicos, contar por tipo usando el detalle de BECAS
+        // Recolectar todos los tipos presentes
         const tiposSet = new Set();
         data.forEach(d => {
             if (Array.isArray(d.BECAS)) d.BECAS.forEach(b => { if (b.TIPO_BECA) tiposSet.add(b.TIPO_BECA); });
@@ -248,39 +259,145 @@ document.addEventListener('datosListos', () => {
             return cnt + (d.PERIODO === p && d.TIPO_BECA === tipo ? 1 : 0);
         }, 0);
 
-        const traces = tipos.map((tipo, i) => {
-            const yVals = periodosPresentes.map(p => countTipoEnPeriodo(p, tipo));
-            return {
-                type: 'bar',
-                name: toLabel(tipo),
-                x: xLabels,
-                y: yVals,
-                marker: { color: TIPO_COLOR[tipo] || C.paleta[i % C.paleta.length] },
-                text: yVals.map(v => v > 0 ? v.toLocaleString('es-MX') : ''),
-                textposition: 'outside',
-                textfont: { color: '#FFF', size: 10 },
-                cliponaxis: false,
-                hovertemplate: '<b>%{x} · ' + toLabel(tipo) + '</b><br>%{y:,} becas<extra></extra>',
-            };
+        const card5         = el5.closest('.chart-card');
+        const modalTipoBeca = document.getElementById('modal-tipo-beca');
+        const checksTipoBeca= document.getElementById('modal-tipo-beca-checks');
+        const vtBtns5       = card5?.querySelectorAll('.vt-btn');
+
+        let selTipos    = new Set(tipos);
+        let selTiposTmp = new Set(tipos);
+
+        const renderTipoBeca = (tiposSel, titulo) => {
+            const activeTipos = tiposSel.size > 0 ? tipos.filter(t => tiposSel.has(t)) : tipos;
+            const traces = activeTipos.map((tipo, i) => {
+                const yVals = periodosPresentes.map(p => countTipoEnPeriodo(p, tipo));
+                return {
+                    type: 'bar',
+                    name: toLabel(tipo),
+                    x: xLabels,
+                    y: yVals,
+                    marker: { color: TIPO_COLOR[tipo] || C.paleta[i % C.paleta.length] },
+                    text: yVals.map(v => v > 0 ? v.toLocaleString('es-MX') : ''),
+                    textposition: 'outside',
+                    textfont: { color: '#FFF', size: 10 },
+                    cliponaxis: false,
+                    hovertemplate: '<b>%{x} Â· ' + toLabel(tipo) + '</b><br>%{y:,} becas<extra></extra>',
+                };
+            });
+
+            // Variación Δ% cuando se selecciona exactamente un tipo
+            const showDelta = activeTipos.length === 1;
+            if (showDelta) {
+                const tipo   = activeTipos[0];
+                const counts = periodosPresentes.map(p => countTipoEnPeriodo(p, tipo));
+                const dVals  = [null];
+                for (let i = 1; i < counts.length; i++) {
+                    const prev = counts[i - 1];
+                    dVals.push(prev > 0 ? +((counts[i] - prev) / prev * 100).toFixed(1) : null);
+                }
+                traces.push({
+                    type: 'scatter', mode: 'lines+markers+text', name: 'Δ variación %',
+                    x: xLabels, y: dVals,
+                    line: { color: C.naranja, width: 2, dash: 'dot' },
+                    marker: {
+                        color: dVals.map(v => v == null ? '#999' : v >= 0 ? C.verde : '#EF4444'),
+                        size: 9,
+                    },
+                    text: dVals.map(v => v == null ? '' : (v > 0 ? '+' : '') + v + '%'),
+                    textposition: 'top center',
+                    textfont: {
+                        color: dVals.map(v => v == null ? C.naranja : v < 0 ? '#EF4444' : C.naranja),
+                        size: 11,
+                    },
+                    hovertemplate: '<b>%{x}</b><br>Δ %{y:.1f}%<extra></extra>',
+                    yaxis: 'y2',
+                });
+            }
+
+            const extraLayout = showDelta ? {
+                yaxis2: {
+                    title: '',
+                    overlaying: 'y', side: 'right',
+                    showgrid: false,
+                    zeroline: true, zerolinecolor: 'rgba(255,255,255,0.3)',
+                },
+            } : {};
+
+            Plotly.newPlot(el5, traces, getLayout(titulo, {
+                barmode: 'group',
+                xaxis: { type: 'category', title: '' },
+                yaxis: {
+                    title: '',
+                    gridcolor: 'rgba(255,255,255,0.08)',
+                    tickformat: ',.0f',
+                },
+                margin: { t: 58, r: showDelta ? 80 : 18, b: 90, l: 72 },
+                legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.28 },
+                ...extraLayout,
+            }), plotConfig);
+        };
+
+        const buildChecksTipoBeca = () => {
+            checksTipoBeca.innerHTML = '';
+            tipos.forEach(tipo => {
+                const lbl = document.createElement('label');
+                lbl.className = 'rng-opt';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.value = tipo;
+                cb.checked = selTiposTmp.has(tipo);
+                cb.addEventListener('change', () => {
+                    if (cb.checked) selTiposTmp.add(tipo); else selTiposTmp.delete(tipo);
+                });
+                const sp = document.createElement('span');
+                sp.textContent = toLabel(tipo);
+                lbl.append(cb, sp);
+                checksTipoBeca.appendChild(lbl);
+            });
+        };
+
+        const openModal5  = () => {
+            selTiposTmp = new Set(selTipos);
+            buildChecksTipoBeca();
+            modalTipoBeca?.removeAttribute('hidden');
+        };
+        const closeModal5 = () => modalTipoBeca?.setAttribute('hidden', '');
+
+        modalTipoBeca?.addEventListener('click', e => { if (e.target === modalTipoBeca) closeModal5(); });
+        modalTipoBeca?.querySelector('.rng-modal-close')?.addEventListener('click', closeModal5);
+        modalTipoBeca?.querySelector('.rng-cancel-btn')?.addEventListener('click', closeModal5);
+        modalTipoBeca?.querySelector('[data-action="all"]')?.addEventListener('click', () => {
+            tipos.forEach(t => selTiposTmp.add(t));
+            checksTipoBeca.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+        });
+        modalTipoBeca?.querySelector('[data-action="none"]')?.addEventListener('click', () => {
+            selTiposTmp.clear();
+            checksTipoBeca.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        });
+        modalTipoBeca?.querySelector('.rng-apply-btn')?.addEventListener('click', () => {
+            selTipos = new Set(selTiposTmp);
+            closeModal5();
+            renderTipoBeca(selTipos, 'Comparativa de Becas Otorgadas por Tipo y Etapa');
         });
 
-        Plotly.newPlot(el5, traces, getLayout('Becas por tipo y periodo', {
-            barmode: 'group',
-            xaxis: { type: 'category', title: 'Periodo' },
-            yaxis: { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
-            margin: { t: 58, r: 18, b: 90, l: 72 },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.28 },
-        }), plotConfig);
+        vtBtns5?.forEach(btn => {
+            btn.addEventListener('click', () => {
+                openModal5();
+            });
+        });
+
+        renderTipoBeca(selTipos, 'Comparativa de Becas Otorgadas por Tipo y Etapa');
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // 6. Composición del Mix de Tipos de Beca — barras 100% apiladas
-    // ═══════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 6. Composición de Tipos de Becas por Etapa â€” barras 100% apiladas
+    //    Top: todos los periodos Â· Comparativa: selección de etapas vía modal
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     const el6 = document.getElementById('chart-periodo-mix');
     if (el6) {
         el6.classList.remove('loading');
 
-        const TIPO_COLOR = {
+        const TIPO_COLOR_6 = {
             'PRIMARIA':              '#5B8AF5',
             'PRIMARIA EXCELENCIA':   C.naranja,
             'SECUNDARIA':            C.verde,
@@ -295,42 +412,108 @@ document.addEventListener('datosListos', () => {
         });
         const tipos6 = [...tiposSet6].sort();
 
-        const traces = tipos6.map((tipo, i) => {
-            const yVals = periodosPresentes.map(p => {
-                const total = becasEnPeriodo(p);
-                const cnt   = data.reduce((c, d) => {
-                    if (Array.isArray(d.BECAS) && d.BECAS.length > 0) {
-                        return c + d.BECAS.filter(b => b.PERIODO === p && b.TIPO_BECA === tipo).length;
-                    }
-                    return c + (d.PERIODO === p && d.TIPO_BECA === tipo ? 1 : 0);
-                }, 0);
-                return total > 0 ? +(cnt / total * 100).toFixed(1) : 0;
+        const card6       = el6.closest('.chart-card');
+        const modalEtapas = document.getElementById('modal-etapas-mix');
+        const checksEtapas= document.getElementById('modal-etapas-mix-checks');
+        const vtBtns6     = card6?.querySelectorAll('.vt-btn');
+
+        let selEtapas    = new Set(periodosPresentes);
+        let selEtapasTmp = new Set(periodosPresentes);
+
+        const renderMix = (etapasSel) => {
+            const activeP      = etapasSel.size > 0
+                ? periodosPresentes.filter(p => etapasSel.has(p))
+                : periodosPresentes;
+            const activeLabels = activeP.map(periodoLabel);
+
+            const traces = tipos6.map((tipo, i) => {
+                const yVals = activeP.map(p => {
+                    const total = becasEnPeriodo(p);
+                    const cnt   = data.reduce((c, d) => {
+                        if (Array.isArray(d.BECAS) && d.BECAS.length > 0) {
+                            return c + d.BECAS.filter(b => b.PERIODO === p && b.TIPO_BECA === tipo).length;
+                        }
+                        return c + (d.PERIODO === p && d.TIPO_BECA === tipo ? 1 : 0);
+                    }, 0);
+                    return total > 0 ? +(cnt / total * 100).toFixed(1) : 0;
+                });
+                return {
+                    type: 'bar',
+                    name: toLabel(tipo),
+                    x: activeLabels,
+                    y: yVals,
+                    marker: { color: TIPO_COLOR_6[tipo] || C.paleta[i % C.paleta.length] },
+                    text: yVals.map(v => v > 3 ? v.toFixed(1) + '%' : ''),
+                    textposition: 'inside',
+                    insidetextanchor: 'middle',
+                    textfont: { color: '#FFF', size: 10 },
+                    hovertemplate: '<b>%{x} Â· ' + toLabel(tipo) + '</b><br>%{y:.1f}%<extra></extra>',
+                };
             });
-            return {
-                type: 'bar',
-                name: toLabel(tipo),
-                x: xLabels,
-                y: yVals,
-                marker: { color: TIPO_COLOR[tipo] || C.paleta[i % C.paleta.length] },
-                text: yVals.map(v => v > 3 ? v.toFixed(1) + '%' : ''),
-                textposition: 'inside',
-                insidetextanchor: 'middle',
-                textfont: { color: '#FFF', size: 10 },
-                hovertemplate: '<b>%{x} · ' + toLabel(tipo) + '</b><br>%{y:.1f}%<extra></extra>',
-            };
+
+            Plotly.newPlot(el6, traces, getLayout('Composición de Tipos de Becas por Etapa', {
+                barmode: 'stack',
+                xaxis: { type: 'category', title: '' },
+                yaxis: {
+                    title: '',
+                    gridcolor: 'rgba(255,255,255,0.08)',
+                    range: [0, 105],
+                    ticksuffix: '%',
+                },
+                showlegend: false,
+                margin: { t: 58, r: 18, b: 60, l: 72 },
+            }), plotConfig);
+        };
+
+        const buildChecksEtapas = () => {
+            checksEtapas.innerHTML = '';
+            periodosPresentes.forEach(p => {
+                const lbl = document.createElement('label');
+                lbl.className = 'rng-opt';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.value = p;
+                cb.checked = selEtapasTmp.has(p);
+                cb.addEventListener('change', () => {
+                    if (cb.checked) selEtapasTmp.add(p); else selEtapasTmp.delete(p);
+                });
+                const sp = document.createElement('span');
+                sp.textContent = periodoLabel(p);
+                lbl.append(cb, sp);
+                checksEtapas.appendChild(lbl);
+            });
+        };
+
+        const openModal6  = () => {
+            selEtapasTmp = new Set(selEtapas);
+            buildChecksEtapas();
+            modalEtapas?.removeAttribute('hidden');
+        };
+        const closeModal6 = () => modalEtapas?.setAttribute('hidden', '');
+
+        modalEtapas?.addEventListener('click', e => { if (e.target === modalEtapas) closeModal6(); });
+        modalEtapas?.querySelector('.rng-modal-close')?.addEventListener('click', closeModal6);
+        modalEtapas?.querySelector('.rng-cancel-btn')?.addEventListener('click', closeModal6);
+        modalEtapas?.querySelector('[data-action="all"]')?.addEventListener('click', () => {
+            periodosPresentes.forEach(p => selEtapasTmp.add(p));
+            checksEtapas.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+        });
+        modalEtapas?.querySelector('[data-action="none"]')?.addEventListener('click', () => {
+            selEtapasTmp.clear();
+            checksEtapas.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        });
+        modalEtapas?.querySelector('.rng-apply-btn')?.addEventListener('click', () => {
+            selEtapas = new Set(selEtapasTmp);
+            closeModal6();
+            renderMix(selEtapas);
         });
 
-        Plotly.newPlot(el6, traces, getLayout('Composición del mix de tipos de beca por periodo', {
-            barmode: 'stack',
-            xaxis: { type: 'category', title: 'Periodo' },
-            yaxis: {
-                title: '% del total',
-                gridcolor: 'rgba(255,255,255,0.08)',
-                range: [0, 105],
-                ticksuffix: '%',
-            },
-            margin: { t: 58, r: 18, b: 90, l: 72 },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.28 },
-        }), plotConfig);
+        vtBtns6?.forEach(btn => {
+            btn.addEventListener('click', () => {
+                openModal6();
+            });
+        });
+
+        renderMix(selEtapas);
     }
 });

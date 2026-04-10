@@ -1,11 +1,13 @@
 // ── GRAFICA_ACADEMICO.JS ── DashboardBecas ────────────────────────────────────
 // Gráficas de la pestaña Académico:
 //   1. Distribución de Becas por Nivel Educativo (donut)
-//   2. Penetración por Sector (donut)
+//   2. Cobertura por Sector (donut)
 //   3. Beneficiarios por Grado Escolar (barras)
-//   4. Diversidad Escolar por Sector — escuelas únicas (barras)
-//   5. Diversidad Escolar por Colonia — top 15 colonias (barras horizontales)
-//   6. Top 15 Escuelas por Beneficiarios (barras horizontales)
+//   4. Número de Beneficiarios por Rangos de Promedios (barras)
+//   5. Promedio de Calificación por Nivel Educativo (barras horizontales)
+//   6. Delegaciones con Alumnos con Promedios Más Altos (barras horizontales)
+//   7. Escuelas con Promedios Más Altos (barras horizontales)
+//   8. Escuelas con Mayor Número de Beneficiarios (barras horizontales — Top / Comparativa)
 
 document.addEventListener('datosListos', () => {
     const data = window.dashData;
@@ -36,16 +38,20 @@ document.addEventListener('datosListos', () => {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 2. Penetración por Sector (donut)
+    // 2. Cobertura por Sector (donut)
     // ═══════════════════════════════════════════════════════════════════════
     const elPS = document.getElementById('chart-penetracion-sector');
     if (elPS) {
         elPS.classList.remove('loading');
         const conteo = contarPor(data, 'SECTOR');
+        const normSector = s => {
+            const m = { 'PUBLICA': 'Pública', 'PRIVADA': 'Privada', 'FEDERAL': 'Federal' };
+            return m[s.toUpperCase()] || (s.charAt(0).toUpperCase() + s.slice(1).toLowerCase());
+        };
         Plotly.newPlot(elPS, [{
             type: 'pie',
             hole: 0.52,
-            labels: Object.keys(conteo).map(l => l.charAt(0).toUpperCase() + l.slice(1).toLowerCase()),
+            labels: Object.keys(conteo).map(normSector),
             values: Object.values(conteo),
             marker: {
                 colors: [C.verde, C.naranja, '#A855F7'],
@@ -54,7 +60,7 @@ document.addEventListener('datosListos', () => {
             textfont: { color: '#FFF', size: 13, family: C.fuente },
             textinfo: 'label+percent',
             hovertemplate: '<b>%{label}</b><br>%{value:,} becarios<br>%{percent}<extra></extra>',
-        }], getLayout('Penetración por Sector', {
+        }], getLayout('Cobertura por Sector', {
             showlegend: false,
             margin: { t: 58, r: 10, b: 20, l: 10 },
         }), plotConfig);
@@ -80,117 +86,189 @@ document.addEventListener('datosListos', () => {
             textposition: 'outside',
             textfont: { color: '#FFF', size: 11 },
             cliponaxis: false,
-            hovertemplate: '<b>GRADO %{x}</b><br>%{y:,} becarios<extra></extra>',
+            hovertemplate: '<b>%{x}</b><br>%{y:,} becarios<extra></extra>',
         }], getLayout('Beneficiarios por Grado Escolar', {
-            xaxis: { title: 'Grado' },
-            yaxis: { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
-            margin: { t: 58, r: 18, b: 68, l: 72 },
+            xaxis: { title: null },
+            yaxis: { title: null, gridcolor: 'rgba(255,255,255,0.08)', tickformat: ',' },
+            margin: { t: 58, r: 18, b: 58, l: 60 },
         }), plotConfig);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 4. Diversidad Escolar por Sector — nº de escuelas únicas por sector
+    // 4. Número de Beneficiarios por Rangos de Promedios (barras)
     // ═══════════════════════════════════════════════════════════════════════
-    const elDS = document.getElementById('chart-diversidad-sector');
-    if (elDS) {
-        elDS.classList.remove('loading');
+    const elRP = document.getElementById('chart-rangos-promedio');
+    if (elRP) {
+        elRP.classList.remove('loading');
+        const conProm = data.filter(d => d.PROMEDIO != null && d.PROMEDIO > 0);
 
-        // Escuelas únicas por sector
-        const escSector = {};
-        data.forEach(d => {
-            if (!d.SECTOR || !d.ESCUELA) return;
-            if (!escSector[d.SECTOR]) escSector[d.SECTOR] = new Set();
-            escSector[d.SECTOR].add(d.ESCUELA);
-        });
-        const sectores   = Object.keys(escSector).sort();
-        const sectoresDisplay = sectores.map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase());
-        const numEscuelas = sectores.map(s => escSector[s].size);
-        const numBenef   = sectores.map(s => data.filter(d => d.SECTOR === s).length);
+        const rangos = [
+            { lo: 0,   hi: 6,    label: '< 6.0'   },
+            { lo: 6,   hi: 7,    label: '6.0 – 6.9' },
+            { lo: 7,   hi: 8,    label: '7.0 – 7.9' },
+            { lo: 8,   hi: 9,    label: '8.0 – 8.9' },
+            { lo: 9,   hi: 9.95, label: '9.0 – 9.9' },
+            { lo: 9.95,hi: 10.1, label: '10.0'      },
+        ];
+        const etiq = rangos.map(r => r.label);
+        const vals = rangos.map(r => conProm.filter(d => d.PROMEDIO >= r.lo && d.PROMEDIO < r.hi).length);
 
-        Plotly.newPlot(elDS, [
-            {
-                type: 'bar', name: 'Escuelas únicas',
-                x: sectoresDisplay, y: numEscuelas,
-                marker: { color: C.verde },
-                text: numEscuelas.map(v => v.toLocaleString('es-MX')),
-                textposition: 'outside',
-                textfont: { color: '#FFF', size: 12 },
-                yaxis: 'y',
-                hovertemplate: '<b>%{x}</b><br>Escuelas únicas: %{y:,}<extra></extra>',
-            },
-            {
-                type: 'bar', name: 'Beneficiarios',
-                x: sectoresDisplay, y: numBenef,
-                marker: { color: C.naranja },
-                text: numBenef.map(v => v.toLocaleString('es-MX')),
-                textposition: 'outside',
-                textfont: { color: '#FFF', size: 12 },
-                yaxis: 'y2',
-                hovertemplate: '<b>%{x}</b><br>Beneficiarios: %{y:,}<extra></extra>',
-            },
-        ], getLayout('Diversidad Escolar por Sector', {
-            barmode: 'group',
-            yaxis:  { title: 'Escuelas únicas',  gridcolor: 'rgba(255,255,255,0.08)' },
-            yaxis2: {
-                title: 'Beneficiarios',
-                overlaying: 'y',
-                side: 'right',
-                gridcolor: 'rgba(255,255,255,0)',
-                showgrid: false,
-            },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18, yanchor: 'top' },
-            margin: { t: 58, r: 80, b: 80, l: 72 },
+        Plotly.newPlot(elRP, [{
+            type: 'bar',
+            x: etiq,
+            y: vals,
+            marker: { color: C.paleta.slice(0, etiq.length) },
+            text: vals.map(v => v.toLocaleString('es-MX')),
+            textposition: 'outside',
+            textfont: { color: '#FFF', size: 11 },
+            cliponaxis: false,
+            hovertemplate: '<b>Promedio %{x}</b><br>%{y:,} beneficiarios<extra></extra>',
+        }], getLayout('Número de Beneficiarios por Rangos de Promedios', {
+            xaxis: { title: null },
+            yaxis: { title: null, gridcolor: 'rgba(255,255,255,0.08)', tickformat: ',' },
+            margin: { t: 58, r: 18, b: 68, l: 60 },
         }), plotConfig);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 5. Diversidad Escolar por Colonia — escuelas únicas por colonia
+    // 5. Promedio de Calificación por Nivel Educativo (barras horizontales)
     // ═══════════════════════════════════════════════════════════════════════
-    const elDC = document.getElementById('chart-diversidad-colonia');
-    if (elDC) {
-        elDC.classList.remove('loading');
+    const elPN = document.getElementById('chart-promedio-nivel');
+    if (elPN) {
+        elPN.classList.remove('loading');
+        const conProm = data.filter(d => d.PROMEDIO != null && d.PROMEDIO > 0 && d.NIVEL_EDUCATIVO);
 
-        const escColonia = {};
-        data.forEach(d => {
-            if (!d.COLONIA || !d.ESCUELA) return;
-            if (!escColonia[d.COLONIA]) escColonia[d.COLONIA] = new Set();
-            escColonia[d.COLONIA].add(d.ESCUELA);
+        const promediosPorNivel = {};
+        const cuentasPorNivel  = {};
+        conProm.forEach(d => {
+            const k = d.NIVEL_EDUCATIVO.charAt(0).toUpperCase() + d.NIVEL_EDUCATIVO.slice(1).toLowerCase();
+            promediosPorNivel[k] = (promediosPorNivel[k] || 0) + d.PROMEDIO;
+            cuentasPorNivel[k]  = (cuentasPorNivel[k]  || 0) + 1;
         });
-        const fullDC = Object.entries(escColonia)
-            .map(([k, v]) => [k, v.size])
+        const niveles    = Object.keys(promediosPorNivel).sort();
+        const promedios  = niveles.map(k => +(promediosPorNivel[k] / cuentasPorNivel[k]).toFixed(2));
+        const minProm    = Math.max(0, Math.min(...promedios) - 0.5);
+
+        Plotly.newPlot(elPN, [{
+            type: 'bar',
+            orientation: 'h',
+            x: promedios,
+            y: niveles,
+            marker: { color: C.paleta.slice(0, niveles.length) },
+            text: promedios.map(v => v.toFixed(2)),
+            textposition: 'outside',
+            textfont: { color: '#FFF', size: 12 },
+            cliponaxis: false,
+            hovertemplate: '<b>%{y}</b><br>Promedio: %{x:.2f}<extra></extra>',
+        }], getLayout('Promedio de Calificación por Nivel Educativo', {
+            xaxis: { title: null, range: [minProm, 10.4] },
+            yaxis: { title: null, autorange: 'reversed' },
+            margin: { t: 58, r: 60, b: 48, l: 120 },
+        }), plotConfig);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 6. Delegaciones con Alumnos con Promedios Más Altos (barras horiz.)
+    // ═══════════════════════════════════════════════════════════════════════
+    const elDP = document.getElementById('chart-delegaciones-promedio');
+    if (elDP) {
+        elDP.classList.remove('loading');
+        const conProm = data.filter(d => d.PROMEDIO != null && d.PROMEDIO > 0 && d.DELEGACION);
+
+        const promMap = {};
+        const cntMap  = {};
+        conProm.forEach(d => {
+            const k = d.DELEGACION.charAt(0).toUpperCase() + d.DELEGACION.slice(1).toLowerCase();
+            promMap[k] = (promMap[k] || 0) + d.PROMEDIO;
+            cntMap[k]  = (cntMap[k]  || 0) + 1;
+        });
+        const fullRank = Object.entries(promMap)
+            .map(([k, s]) => [k, +(s / cntMap[k]).toFixed(2)])
             .sort((a, b) => b[1] - a[1]);
 
-        const renderDiversidadColonia = (n) => {
-            const ranking = fullDC.slice(0, n);
-            const labels  = ranking.map(r => r[0].charAt(0).toUpperCase() + r[0].slice(1).toLowerCase());
+        const renderDelegacionesProm = (n) => {
+            const ranking = fullRank.slice(0, n);
+            const labels  = ranking.map(r => r[0]);
             const vals    = ranking.map(r => r[1]);
+            const minProm = Math.max(0, Math.min(...vals) - 0.3);
 
-            Plotly.newPlot(elDC, [{
+            Plotly.newPlot(elDP, [{
                 type: 'bar',
                 orientation: 'h',
                 x: vals,
                 y: labels,
-                marker: { color: C.paleta[2] },
-                text: vals.map(v => v.toLocaleString('es-MX')),
+                marker: { color: vals.map((_, i) => C.paleta[i % C.paleta.length]) },
+                text: vals.map(v => v.toFixed(2)),
                 textposition: 'outside',
                 textfont: { color: '#FFF', size: 11 },
                 cliponaxis: false,
-                hovertemplate: '<b>%{y}</b><br>Escuelas únicas: %{x:,}<extra></extra>',
-            }], getLayout(`Diversidad Escolar por Colonia (Top ${n})`, {
-                xaxis: { title: 'Escuelas únicas' },
-                yaxis: { autorange: 'reversed' },
-                margin: { t: 58, r: 60, b: 48, l: 200 },
+                hovertemplate: '<b>%{y}</b><br>Promedio: %{x:.2f}<extra></extra>',
+            }], getLayout(`Delegaciones con Alumnos con Promedios Más Altos`, {
+                xaxis: { title: null, range: [minProm, 10.4] },
+                yaxis: { title: null, autorange: 'reversed' },
+                margin: { t: 58, r: 60, b: 48, l: 220 },
             }), plotConfig);
         };
 
-        elDC._renderTop = renderDiversidadColonia;
-        const selDC = document.querySelector('[data-chart="chart-diversidad-colonia"]');
-        const nDC   = +(selDC?.querySelector('.top-select')?.value ?? 15);
-        renderDiversidadColonia(nDC);
+        elDP._renderTop = renderDelegacionesProm;
+        const selDP = document.querySelector('[data-chart="chart-delegaciones-promedio"]');
+        const nDP   = +(selDP?.querySelector('.top-select')?.value ?? 10);
+        renderDelegacionesProm(nDP);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 6. Top Escuelas por Beneficiarios (barras horizontales)
+    // 7. Escuelas con Promedios Más Altos (barras horizontales)
+    // ═══════════════════════════════════════════════════════════════════════
+    const elEP = document.getElementById('chart-escuelas-promedio');
+    if (elEP) {
+        elEP.classList.remove('loading');
+        const conProm = data.filter(d => d.PROMEDIO != null && d.PROMEDIO > 0 && d.ESCUELA);
+
+        const promMap = {};
+        const cntMap  = {};
+        conProm.forEach(d => {
+            const k = d.ESCUELA.charAt(0).toUpperCase() + d.ESCUELA.slice(1).toLowerCase();
+            promMap[k] = (promMap[k] || 0) + d.PROMEDIO;
+            cntMap[k]  = (cntMap[k]  || 0) + 1;
+        });
+        // Sólo escuelas con al menos 5 beneficiarios para minimizar sesgo
+        const fullRank = Object.entries(promMap)
+            .filter(([k]) => cntMap[k] >= 5)
+            .map(([k, s]) => [k, +(s / cntMap[k]).toFixed(2)])
+            .sort((a, b) => b[1] - a[1]);
+
+        const renderEscuelasProm = (n) => {
+            const ranking = fullRank.slice(0, n);
+            const labels  = ranking.map(r => r[0]);
+            const vals    = ranking.map(r => r[1]);
+            const minProm = Math.max(0, Math.min(...vals) - 0.3);
+
+            Plotly.newPlot(elEP, [{
+                type: 'bar',
+                orientation: 'h',
+                x: vals,
+                y: labels,
+                marker: { color: vals.map((_, i) => C.paleta[i % C.paleta.length]) },
+                text: vals.map(v => v.toFixed(2)),
+                textposition: 'outside',
+                textfont: { color: '#FFF', size: 11 },
+                cliponaxis: false,
+                hovertemplate: '<b>%{y}</b><br>Promedio: %{x:.2f}<extra></extra>',
+            }], getLayout(`Escuelas con Promedios Más Altos`, {
+                xaxis: { title: null, range: [minProm, 10.4] },
+                yaxis: { title: null, autorange: 'reversed' },
+                margin: { t: 58, r: 60, b: 48, l: 300 },
+            }), plotConfig);
+        };
+
+        elEP._renderTop = renderEscuelasProm;
+        const selEP = document.querySelector('[data-chart="chart-escuelas-promedio"]');
+        const nEP   = +(selEP?.querySelector('.top-select')?.value ?? 10);
+        renderEscuelasProm(nEP);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 8. Escuelas con Mayor Número de Beneficiarios (barras horiz. — Top / Comparativa)
     // ═══════════════════════════════════════════════════════════════════════
     const elTE = document.getElementById('chart-top-escuelas');
     if (elTE) {
@@ -199,9 +277,15 @@ document.addEventListener('datosListos', () => {
         const conteo   = contarPor(data.filter(d => d.ESCUELA), 'ESCUELA');
         const fullRank = sortedDesc(conteo);
 
+        const normEscuela = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+        // Todas las escuelas normalizadas, en orden descendente por beneficiarios
+        const todasEscuelas = fullRank.map(r => normEscuela(r[0]));
+
+        // ── Vista Top ────────────────────────────────────────────────────
         const renderTopEscuelas = (n) => {
             const ranking = fullRank.slice(0, n);
-            const labels  = ranking.map(r => r[0].charAt(0).toUpperCase() + r[0].slice(1).toLowerCase());
+            const labels  = ranking.map(r => normEscuela(r[0]));
             const vals    = ranking.map(r => r[1]);
             const maxV    = Math.max(...vals, 1);
 
@@ -216,24 +300,128 @@ document.addEventListener('datosListos', () => {
                 textfont: { color: '#FFF', size: 11 },
                 cliponaxis: false,
                 hovertemplate: '<b>%{y}</b><br>%{x:,} beneficiarios<extra></extra>',
-            }], getLayout(`Top ${n} Escuelas por Beneficiarios`, {
-                xaxis: { automargin: true },
-                yaxis: { autorange: 'reversed' },
-                margin: { t: 58, r: 80, b: 72, l: 340 },
-                annotations: [{
-                    text: 'Beneficiarios',
-                    xref: 'paper', yref: 'paper',
-                    x: 0.4, y: -0.1,
-                    xanchor: 'center', yanchor: 'top',
-                    showarrow: false,
-                    font: { color: '#FFF', size: 13, family: C.fuente },
-                }],
+            }], getLayout('Escuelas con Mayor Número de Beneficiarios', {
+                xaxis: { title: null, tickformat: ',' },
+                yaxis: { title: null, autorange: 'reversed' },
+                margin: { t: 58, r: 80, b: 48, l: 340 },
             }), plotConfig);
         };
 
-        elTE._renderTop = renderTopEscuelas;
-        const selTE = document.querySelector('[data-chart="chart-top-escuelas"]');
-        const nTE   = +(selTE?.querySelector('.top-select')?.value ?? 15);
+        // ── Vista Comparativa (selección de escuelas) ─────────────────────
+        const renderComparativaEscuelas = (sel) => {
+            // sel: array de nombres de escuelas normalizados ya seleccionados
+            const displayed = sel.length > 0 ? sel : todasEscuelas;
+            // Mantener orden descendente por beneficiarios
+            const ranking = fullRank
+                .filter(r => displayed.includes(normEscuela(r[0])))
+                .slice();
+            const labels = ranking.map(r => normEscuela(r[0]));
+            const vals   = ranking.map(r => r[1]);
+            const maxV   = Math.max(...vals, 1);
+
+            Plotly.newPlot(elTE, [{
+                type: 'bar',
+                orientation: 'h',
+                x: vals,
+                y: labels,
+                marker: { color: vals.map(v => v === maxV ? C.naranja : C.verde) },
+                text: vals.map(v => v.toLocaleString('es-MX')),
+                textposition: 'outside',
+                textfont: { color: '#FFF', size: 11 },
+                cliponaxis: false,
+                hovertemplate: '<b>%{y}</b><br>%{x:,} beneficiarios<extra></extra>',
+            }], getLayout('Escuelas con Mayor Número de Beneficiarios · Comparativa', {
+                xaxis: { title: null, tickformat: ',' },
+                yaxis: { title: null, autorange: 'reversed' },
+                margin: { t: 58, r: 80, b: 48, l: 340 },
+            }), plotConfig);
+        };
+
+        // ── Modal ────────────────────────────────────────────────────────
+        const modal     = document.getElementById('modal-top-escuelas');
+        const escChecks = document.getElementById('esc-checks');
+
+        // Generar checkboxes dinámicamente con todas las escuelas
+        if (escChecks) {
+            todasEscuelas.forEach(esc => {
+                const lbl = document.createElement('label');
+                lbl.className = 'rng-opt';
+                lbl.innerHTML = `<input type="checkbox" value="${esc}" checked><span>${esc}</span>`;
+                escChecks.appendChild(lbl);
+            });
+        }
+
+        // Selección persistida entre aperturas del modal
+        let seleccionEscuelas = [...todasEscuelas];
+
+        const abrirModal = () => {
+            if (!modal) return;
+            // Limpiar búsqueda y mostrar todas las opciones
+            if (escSearch) { escSearch.value = ''; filterEscChecks(''); }
+            escChecks?.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = seleccionEscuelas.includes(cb.value);
+            });
+            modal.hidden = false;
+        };
+        const cerrarModal = () => { if (modal) modal.hidden = true; };
+
+        // ── Buscador ─────────────────────────────────────────────────────
+        const escSearch = document.getElementById('esc-search');
+        const filterEscChecks = (q) => {
+            const term = q.trim().toLowerCase();
+            escChecks?.querySelectorAll('label.rng-opt').forEach(lbl => {
+                lbl.hidden = term !== '' && !lbl.querySelector('span').textContent.toLowerCase().includes(term);
+            });
+        };
+        escSearch?.addEventListener('input', () => filterEscChecks(escSearch.value));
+
+        document.getElementById('esc-all')?.addEventListener('click', () => {
+            escChecks?.querySelectorAll('label.rng-opt:not([hidden]) input').forEach(cb => cb.checked = true);
+        });
+        document.getElementById('esc-none')?.addEventListener('click', () => {
+            escChecks?.querySelectorAll('label.rng-opt:not([hidden]) input').forEach(cb => cb.checked = false);
+        });
+        document.getElementById('esc-close')?.addEventListener('click', cerrarModal);
+        document.getElementById('esc-cancel-btn')?.addEventListener('click', cerrarModal);
+        modal?.addEventListener('click', e => { if (e.target === modal) cerrarModal(); });
+
+        document.getElementById('esc-apply-btn')?.addEventListener('click', () => {
+            const checked = [...(escChecks?.querySelectorAll('input:checked') ?? [])].map(cb => cb.value);
+            seleccionEscuelas = checked.length > 0 ? checked : [...todasEscuelas];
+            cerrarModal();
+            renderComparativaEscuelas(seleccionEscuelas);
+        });
+
+        // ── Controles ────────────────────────────────────────────────────
+        const vtTE   = document.getElementById('vt-top-escuelas');
+        const selTE  = document.getElementById('top-escuelas-top-n');
+        let   modeTE = 'top';
+        let   nTE    = +(selTE?.value ?? 15);
+
+        if (vtTE) {
+            vtTE.querySelectorAll('.vt-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    vtTE.querySelectorAll('.vt-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    modeTE = btn.dataset.view;
+                    if (modeTE === 'comparativa') {
+                        if (selTE) selTE.hidden = true;
+                        abrirModal();
+                    } else {
+                        if (selTE) selTE.hidden = false;
+                        renderTopEscuelas(nTE);
+                    }
+                });
+            });
+        }
+
+        if (selTE) {
+            selTE.addEventListener('change', () => {
+                nTE = +selTE.value;
+                renderTopEscuelas(nTE);
+            });
+        }
+
         renderTopEscuelas(nTE);
     }
 });

@@ -1,11 +1,12 @@
 <h2 class="section-title">Territorial</h2>
 
-<!-- Beneficiarios por Delegación -->
+<!-- ── 1. Beneficiarios por Delegación ──────────────────────────────────── -->
 <div class="charts-grid cols-1">
     <div class="chart-card">
-        <div class="top-selector" data-chart="chart-delegacion-barras">
-            <span class="top-selector-label">Mostrar:</span>
-            <select class="top-select">
+        <div class="view-toggle">
+            <button class="vt-btn active" data-view="top">Top</button>
+            <button class="vt-btn" data-view="comparativa">Comparativa</button>
+            <select class="top-select" id="del-barras-top-n" style="margin-left:6px">
                 <option value="5">Top 5</option>
                 <option value="10">Top 10</option>
                 <option value="15" selected>Top 15</option>
@@ -15,35 +16,67 @@
     </div>
 </div>
 
-<!-- Delegación: Inversión vs Beneficiarios (scatter) + Treemap -->
-<div class="charts-grid cols-2">
-    <div class="chart-card" style="position:relative;">
-        <div class="chk-dropdown-wrap">
-            <button id="dsc-toggle" class="chk-dropdown-btn">
-                <span id="dsc-toggle-label">Delegaciones</span>
-                <svg class="chk-chevron" viewBox="0 0 10 6" width="10" height="6"><path d="M0 0l5 6 5-6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-            </button>
-            <div id="delegacion-scatter-filter" class="chk-dropdown-panel">
-                <div class="chk-dropdown-actions">
-                    <button id="dsc-all"  class="chk-action-btn">Todos</button>
-                    <button id="dsc-none" class="chk-action-btn">Ninguno</button>
-                </div>
-                <div id="delegacion-scatter-items" class="chart-checklist-items"></div>
-            </div>
+<!-- Modal: Delegaciones (barras) -->
+<div id="modal-del-barras" class="rng-modal-overlay" hidden>
+    <div class="rng-modal">
+        <div class="rng-modal-header">
+            <span class="rng-modal-title">Seleccionar Delegaciones</span>
+            <button class="rng-modal-close">×</button>
         </div>
-        <div id="chart-delegacion-scatter" class="chart-container chart-lg"></div>
+        <div class="rng-modal-actions">
+            <button class="rng-action-btn" data-action="all">Seleccionar todos</button>
+            <button class="rng-action-btn" data-action="none">Limpiar selección</button>
+        </div>
+        <div class="rng-modal-checks" id="modal-del-barras-checks"></div>
+        <div class="rng-modal-footer">
+            <button class="rng-footer-btn rng-cancel-btn">Cancelar</button>
+            <button class="rng-footer-btn rng-apply-btn" data-apply="del-barras">Aplicar</button>
+        </div>
     </div>
+</div>
+
+<!-- ── 2. Treemap: Distribución de Beneficiarios por Delegación ─────────── -->
+<div class="charts-grid cols-1">
     <div class="chart-card">
+        <div class="view-toggle">
+            <button class="vt-btn active" data-view="top">Top</button>
+            <button class="vt-btn" data-view="comparativa">Comparativa</button>
+            <select class="top-select" id="del-treemap-top-n" style="margin-left:6px">
+                <option value="5">Top 5</option>
+                <option value="10">Top 10</option>
+                <option value="15" selected>Top 15</option>
+            </select>
+        </div>
         <div id="chart-delegacion-treemap" class="chart-container chart-xl"></div>
     </div>
 </div>
 
-<!-- Top Colonias por Beneficiarios (ancho completo) -->
+<!-- Modal: Delegaciones (treemap) -->
+<div id="modal-del-treemap" class="rng-modal-overlay" hidden>
+    <div class="rng-modal">
+        <div class="rng-modal-header">
+            <span class="rng-modal-title">Seleccionar Delegaciones</span>
+            <button class="rng-modal-close">×</button>
+        </div>
+        <div class="rng-modal-actions">
+            <button class="rng-action-btn" data-action="all">Seleccionar todos</button>
+            <button class="rng-action-btn" data-action="none">Limpiar selección</button>
+        </div>
+        <div class="rng-modal-checks" id="modal-del-treemap-checks"></div>
+        <div class="rng-modal-footer">
+            <button class="rng-footer-btn rng-cancel-btn">Cancelar</button>
+            <button class="rng-footer-btn rng-apply-btn" data-apply="del-treemap">Aplicar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── 3. Top Colonias por Beneficiarios (burbujas) ──────────────────────── -->
 <div class="charts-grid cols-1">
     <div class="chart-card">
-        <div class="top-selector" data-chart="chart-top15-colonias">
-            <span class="top-selector-label">Mostrar:</span>
-            <select class="top-select">
+        <div class="view-toggle">
+            <button class="vt-btn active" data-view="top">Top</button>
+            <button class="vt-btn" data-view="comparativa">Comparativa</button>
+            <select class="top-select" id="col-top-n" style="margin-left:6px">
                 <option value="5">Top 5</option>
                 <option value="10">Top 10</option>
                 <option value="15" selected>Top 15</option>
@@ -53,37 +86,101 @@
     </div>
 </div>
 
-<!-- Mapa Coroplético — Beneficiarios por Colonia -->
-<div class="charts-grid cols-1">
-    <div class="chart-card">
-        <div id="chart-mapa-colonias" class="chart-container chart-xxl"></div>
+<!-- Modal: Colonias (burbujas) -->
+<div id="modal-colonias-terr" class="rng-modal-overlay" hidden>
+    <div class="rng-modal">
+        <div class="rng-modal-header">
+            <span class="rng-modal-title">Seleccionar Colonias</span>
+            <button class="rng-modal-close">×</button>
+        </div>
+        <div class="rng-modal-actions">
+            <button class="rng-action-btn" data-action="all">Seleccionar todos</button>
+            <button class="rng-action-btn" data-action="none">Limpiar selección</button>
+        </div>
+        <div style="padding: 0 18px 6px;">
+            <input type="text" class="rng-search-input" placeholder="Buscar colonia...">
+        </div>
+        <div class="rng-modal-checks" id="modal-colonias-terr-checks"></div>
+        <div class="rng-modal-footer">
+            <button class="rng-footer-btn rng-cancel-btn">Cancelar</button>
+            <button class="rng-footer-btn rng-apply-btn" data-apply="colonias-terr">Aplicar</button>
+        </div>
     </div>
 </div>
 
-<!-- Análisis de Proximidad — Distancia alumno ↔ escuela -->
-<h3 class="section-subtitle">Análisis de Proximidad</h3>
-
-<!-- Histograma de distancias (ancho completo) -->
+<!-- ── 4. Mapa de Beneficiarios por Territorio ───────────────────────────── -->
 <div class="charts-grid cols-1">
-    <div class="chart-card">
-        <div id="chart-proximidad-histograma" class="chart-container chart-xl"></div>
-    </div>
-</div>
-
-<!-- Promedio por delegación + Scatter distancia vs beca -->
-<div class="charts-grid cols-2">
-    <div class="chart-card">
-        <div class="top-selector" data-chart="chart-proximidad-delegacion">
-            <span class="top-selector-label">Mostrar:</span>
-            <select class="top-select">
+    <div class="chart-card" style="position:relative;">
+        <div id="mapa-tipo-toggle" class="view-toggle">
+            <button class="vt-btn active" data-territorio="colonias">Colonias</button>
+            <button class="vt-btn" data-territorio="delegaciones">Delegaciones</button>
+        </div>
+        <div id="mapa-topcomp-toggle" class="view-toggle" style="margin-top:4px;">
+            <button class="vt-btn active" data-view="top">Top</button>
+            <button class="vt-btn" data-view="comparativa">Comparativa</button>
+            <select class="top-select" id="mapa-top-n" style="margin-left:6px">
                 <option value="5">Top 5</option>
                 <option value="10">Top 10</option>
                 <option value="15" selected>Top 15</option>
             </select>
         </div>
-        <div id="chart-proximidad-delegacion" class="chart-container chart-xl"></div>
+        <div style="position:relative;">
+            <div id="chart-mapa-colonias" class="chart-container chart-xxl"></div>
+            <div style="position:absolute;top:70px;right:130px;z-index:500;display:flex;flex-direction:column;gap:4px;">
+                <button id="mapa-zoom-in"    class="vt-btn" title="Acercar">＋</button>
+                <button id="mapa-zoom-out"   class="vt-btn" title="Alejar">－</button>
+                <button id="mapa-fullscreen" class="vt-btn" title="Pantalla completa">⛶</button>
+            </div>
+        </div>
     </div>
-    <div class="chart-card">
-        <div id="chart-proximidad-scatter" class="chart-container chart-xl"></div>
+</div>
+
+<!-- Modal: Territorios del mapa -->
+<div id="modal-mapa-terr" class="rng-modal-overlay" hidden>
+    <div class="rng-modal">
+        <div class="rng-modal-header">
+            <span class="rng-modal-title" id="modal-mapa-terr-title">Seleccionar Territorios</span>
+            <button class="rng-modal-close">×</button>
+        </div>
+        <div class="rng-modal-actions">
+            <button class="rng-action-btn" data-action="all">Seleccionar todos</button>
+            <button class="rng-action-btn" data-action="none">Limpiar selección</button>
+        </div>
+        <div style="padding: 0 18px 6px;">
+            <input type="text" class="rng-search-input" placeholder="Buscar...">
+        </div>
+        <div class="rng-modal-checks" id="modal-mapa-terr-checks"></div>
+        <div class="rng-modal-footer">
+            <button class="rng-footer-btn rng-cancel-btn">Cancelar</button>
+            <button class="rng-footer-btn rng-apply-btn" data-apply="mapa-terr">Aplicar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Análisis de Proximidad — OCULTO ──────────────────────────────────── -->
+<div hidden>
+    <h3 class="section-subtitle">Análisis de Proximidad</h3>
+
+    <div class="charts-grid cols-1">
+        <div class="chart-card">
+            <div id="chart-proximidad-histograma" class="chart-container chart-xl"></div>
+        </div>
+    </div>
+
+    <div class="charts-grid cols-2">
+        <div class="chart-card">
+            <div class="top-selector" data-chart="chart-proximidad-delegacion">
+                <span class="top-selector-label">Mostrar:</span>
+                <select class="top-select">
+                    <option value="5">Top 5</option>
+                    <option value="10">Top 10</option>
+                    <option value="15" selected>Top 15</option>
+                </select>
+            </div>
+            <div id="chart-proximidad-delegacion" class="chart-container chart-xl"></div>
+        </div>
+        <div class="chart-card">
+            <div id="chart-proximidad-scatter" class="chart-container chart-xl"></div>
+        </div>
     </div>
 </div>

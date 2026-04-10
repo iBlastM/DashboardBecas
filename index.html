@@ -64,17 +64,6 @@
         </div>
 
         <div class="filtro-grupo">
-            <label class="filtro-label">Sector</label>
-            <div class="ms-wrap" id="ms-sector">
-                <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
-                <div class="ms-panel" hidden>
-                    <label class="ms-opt"><input type="checkbox" value="PUBLICA"> Público</label>
-                    <label class="ms-opt"><input type="checkbox" value="PRIVADA"> Privado</label>
-                </div>
-            </div>
-        </div>
-
-        <div class="filtro-grupo">
             <label class="filtro-label">Año</label>
             <div class="ms-wrap" id="ms-anio">
                 <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
@@ -102,6 +91,17 @@
         </div>
 
         <div class="filtro-grupo">
+            <label class="filtro-label">Sector</label>
+            <div class="ms-wrap" id="ms-sector">
+                <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
+                <div class="ms-panel" hidden>
+                    <label class="ms-opt"><input type="checkbox" value="PUBLICA"> Público</label>
+                    <label class="ms-opt"><input type="checkbox" value="PRIVADA"> Privado</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="filtro-grupo">
             <label class="filtro-label">Municipio</label>
             <div class="ms-wrap ms-wrap-lg" id="ms-municipio">
                 <button class="ms-btn" type="button"><span class="ms-text">Todos</span><span class="ms-arrow">▾</span></button>
@@ -113,11 +113,11 @@
             <label class="filtro-label">Escuela</label>
             <div class="ms-wrap ms-wrap-lg" id="ms-escuela">
                 <button class="ms-btn" type="button"><span class="ms-text">Todas</span><span class="ms-arrow">▾</span></button>
-                <div class="ms-panel ms-panel-scroll" hidden>
+                <div class="ms-panel ms-panel-escuela" hidden>
                     <div class="ms-search-wrap">
                         <input type="text" id="escuela-search" class="ms-search" placeholder="Buscar escuela…" autocomplete="off">
                     </div>
-                    <div class="ms-checkboxes"></div>
+                    <div class="ms-checkboxes ms-panel-scroll"></div>
                 </div>
             </div>
         </div>

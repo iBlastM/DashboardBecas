@@ -1,13 +1,10 @@
-// ── FILTROS.JS ── DashboardBecas ───────────────────────────────────────────────
-// Barra de filtros multi-selección: Tipo · Sector · Año · Etapa · Municipio · Escuela
+﻿// ── FILTROS.JS ── DashboardBecas ───────────────────────────────────────────────
+// Barra de filtros multi-selección: Tipo · Año · Etapa · Sector · Municipio · Escuela
+// Oculta opciones sin resultados (faceted search) y aplica lógica AND entre grupos.
 // Actualiza window.dashData y re-dispara 'datosListos' para refrescar charts.
 
 (function () {
     let _debounce = null;
-
-    // Mapas dinámicos año↔etapa (se construyen desde los datos reales)
-    let _etapasPorAnio = new Map();  // 'YYYY' → Set<'E1'|'E2'|'EX'>
-    let _aniosPorEtapa = new Map();  // 'E1'|'E2'|'EX' → Set<'YYYY'>
 
     // Municipios canónicos; cualquier otro se agrupa como 'Otro'
     const MUNICIPIOS_FIJOS = ['Corregidora', 'El Marqués', 'Huimilpan', 'Querétaro'];
@@ -18,14 +15,37 @@
         return found || 'Otro';
     }
 
-    // ── Obtener valores seleccionados en un ms-wrap ──────────────────────────
+    // ── Obtener valores seleccionados en un ms-wrap (solo visibles) ──────────
     function getSelected(wrapId) {
         const wrap = document.getElementById(wrapId);
         if (!wrap) return [];
-        return [...wrap.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+        return [...wrap.querySelectorAll('input[type="checkbox"]:checked')]
+            .filter(cb => cb.closest('.ms-opt')?.style.display !== 'none')
+            .map(cb => cb.value);
     }
 
-    // ── Actualizar texto del botón trigger ──────────────────────────────────
+    // ── Snapshot completo de selección activa ────────────────────────────────
+    function getSeleccion() {
+        const tipos      = getSelected('ms-tipo');
+        const aniosStr   = getSelected('ms-anio');
+        const etapaVals  = getSelected('ms-etapa');
+        const sector     = getSelected('ms-sector');
+        const municipios = getSelected('ms-municipio');
+        const escuelas   = getSelected('ms-escuela');
+        return {
+            tipos,
+            anios:      aniosStr.map(Number),
+            etapaVals,
+            etapaCodes: etapaVals.map(e =>
+                e === '1RA ETAPA' ? 'E1' : e === '2DA ETAPA' ? 'E2' : 'EX'
+            ),
+            sector,
+            municipios,
+            escuelas,
+        };
+    }
+
+    // ── Actualizar texto del botón trigger ───────────────────────────────────
     function updateTrigger(wrapId, placeholder) {
         const wrap = document.getElementById(wrapId);
         if (!wrap) return;
@@ -37,7 +57,8 @@
             span.style.color = '';
         } else {
             span.textContent = vals.length === 1
-                ? wrap.querySelector(`input[value="${CSS.escape(vals[0])}"]`)?.closest('.ms-opt')?.textContent.trim() || vals[0]
+                ? wrap.querySelector(`input[value="${CSS.escape(vals[0])}"]`)
+                      ?.closest('.ms-opt')?.textContent.trim() || vals[0]
                 : vals.length + ' seleccionados';
             span.style.color = 'var(--accent-1)';
         }
@@ -54,7 +75,6 @@
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const isOpen = wrap.classList.contains('open');
-            // Cerrar todos los otros abiertos
             document.querySelectorAll('.ms-wrap.open').forEach(w => {
                 w.classList.remove('open');
                 w.querySelector('.ms-panel')?.setAttribute('hidden', '');
@@ -68,7 +88,6 @@
         panel.addEventListener('change', () => {
             updateTrigger(wrapId, placeholder);
             if (onChange) onChange();
-            scheduleAplicar();
         });
     }
 
@@ -80,134 +99,187 @@
         });
     });
 
-    // ── Construir mapas año↔etapa desde los datos completos ───────────────────
-    function construirMapsAnioEtapa(data) {
-        _etapasPorAnio = new Map();
-        _aniosPorEtapa = new Map();
-        data.forEach(d => {
-            const periodos = new Set();
-            if (Array.isArray(d.BECAS) && d.BECAS.length > 0)
-                d.BECAS.forEach(b => { if (b.PERIODO) periodos.add(b.PERIODO); });
-            else if (Array.isArray(d.PERIODOS) && d.PERIODOS.length > 0)
-                d.PERIODOS.forEach(p => { if (p) periodos.add(p); });
-            else if (d.PERIODO)
-                periodos.add(d.PERIODO);
-
-            periodos.forEach(p => {
-                const m = p.match(/^(\d{4})-(\w+)$/);
-                if (!m) return;
-                const [, anio, ec] = m;
-                if (!_etapasPorAnio.has(anio)) _etapasPorAnio.set(anio, new Set());
-                _etapasPorAnio.get(anio).add(ec);
-                if (!_aniosPorEtapa.has(ec)) _aniosPorEtapa.set(ec, new Set());
-                _aniosPorEtapa.get(ec).add(anio);
-            });
-        });
-    }
-
-    // ── Actualizar opciones de Etapa según años seleccionados ───────────────
-    function actualizarOpcionesEtapa() {
-        const wrap = document.getElementById('ms-etapa');
-        if (!wrap) return;
-        const aniosSeleccionados = getSelected('ms-anio');
-
-        // Unión de etapas válidas para los años seleccionados (null = todas)
-        let etapasValidas = null;
-        if (aniosSeleccionados.length > 0) {
-            etapasValidas = new Set();
-            aniosSeleccionados.forEach(a => {
-                const ecs = _etapasPorAnio.get(a);
-                if (ecs) ecs.forEach(ec => etapasValidas.add(ec));
+    // ── Comprobar si un registro pasa el filtro (año AND etapa AND tipo) ─────
+    // Pasar null para omitir ese criterio.
+    function becasMatchFilter(record, anios, etapaCodes, tipos) {
+        if (Array.isArray(record.BECAS) && record.BECAS.length > 0) {
+            return record.BECAS.some(b => {
+                const okAnio  = anios      === null || (b.PERIODO && anios.some(a => b.PERIODO.startsWith(a + '-')));
+                const okEtapa = etapaCodes === null || (b.PERIODO && etapaCodes.some(ec => b.PERIODO.endsWith('-' + ec)));
+                const okTipo  = tipos      === null || tipos.includes(b.TIPO_BECA);
+                return okAnio && okEtapa && okTipo;
             });
         }
-
-        wrap.querySelectorAll('.ms-opt[data-etapa]').forEach(opt => {
-            const ec = opt.dataset.etapa;
-            const disabled = etapasValidas !== null && !etapasValidas.has(ec);
-            if (disabled) {
-                opt.classList.add('ms-disabled');
-                opt.querySelector('input').checked = false;
-            } else {
-                opt.classList.remove('ms-disabled');
-            }
-        });
-
-        updateTrigger('ms-etapa', 'Todas');
+        // Registro plano (sin array BECAS)
+        const okAnio  = anios      === null || anios.includes(record.AÑO);
+        const etCode = record.ETAPA === '1RA ETAPA' ? 'E1' : record.ETAPA === '2DA ETAPA' ? 'E2' : 'EX';
+        const okEtapa = etapaCodes === null || etapaCodes.includes(etCode);
+        const okTipo  = tipos      === null || tipos.includes(record.TIPO_BECA);
+        return okAnio && okEtapa && okTipo;
     }
 
-    // ── Actualizar opciones de Año según etapas seleccionadas ───────────────
-    function actualizarOpcionesAnio() {
-        const wrap = document.getElementById('ms-anio');
-        if (!wrap) return;
-        const etapasSeleccionadas = getSelected('ms-etapa').map(e =>
-            e === '1RA ETAPA' ? 'E1' : e === '2DA ETAPA' ? 'E2' : 'EX'
-        );
+    // ── Aplicar todos los filtros activos EXCEPTO los grupos en 'skip' ───────
+    function applyFiltersExcept(skip, sel) {
+        let data = window.dashDataFull;
 
-        // Unión de años válidos para las etapas seleccionadas (null = todos)
-        let aniosValidos = null;
-        if (etapasSeleccionadas.length > 0) {
-            aniosValidos = new Set();
-            etapasSeleccionadas.forEach(ec => {
-                const anios = _aniosPorEtapa.get(ec);
-                if (anios) anios.forEach(a => aniosValidos.add(a));
-            });
+        const useTipo  = !skip.includes('tipo')  && sel.tipos.length > 0;
+        const useAnio  = !skip.includes('anio')  && sel.anios.length > 0;
+        const useEtapa = !skip.includes('etapa') && sel.etapaCodes.length > 0;
+
+        if (useTipo || useAnio || useEtapa) {
+            data = data.filter(r => becasMatchFilter(
+                r,
+                useAnio  ? sel.anios      : null,
+                useEtapa ? sel.etapaCodes : null,
+                useTipo  ? sel.tipos      : null
+            ));
+        }
+        if (!skip.includes('sector')    && sel.sector.length)
+            data = data.filter(r => sel.sector.includes(r.SECTOR));
+        if (!skip.includes('municipio') && sel.municipios.length)
+            data = data.filter(r => sel.municipios.includes(normalizarMunicipio(r.MUNICIPIO)));
+        if (!skip.includes('escuela')   && sel.escuelas.length)
+            data = data.filter(r => sel.escuelas.includes(r.ESCUELA));
+
+        return data;
+    }
+
+    // ── Actualizar opciones visibles de TODOS los filtros (faceted search) ───
+    // Oculta opciones que no producirían resultados con los filtros actuales.
+    // Para dimensiones dentro de BECAS (tipo/año/etapa) filtra becas individualmente
+    // con el resto de criterios activos para evitar contaminación cruzada.
+    function actualizarOpcionesVisibles() {
+        const sel = getSeleccion();
+
+        // ── helper: ¿esta beca cumple los criterios dados? ───────────────────
+        function becaOk(b, anios, etapaCodes, tipos) {
+            const okAnio  = !anios.length      || (b.PERIODO && anios.some(a => b.PERIODO.startsWith(a + '-')));
+            const okEtapa = !etapaCodes.length || (b.PERIODO && etapaCodes.some(ec => b.PERIODO.endsWith('-' + ec)));
+            const okTipo  = !tipos.length      || tipos.includes(b.TIPO_BECA);
+            return okAnio && okEtapa && okTipo;
         }
 
-        wrap.querySelectorAll('.ms-opt').forEach(opt => {
+        // ── Tipos ─────────────────────────────────────────────────────────────
+        // Restricción: de los registros que pasan año+etapa+sector+municipio+escuela,
+        // contar solo las becas que también pasan año y etapa.
+        const validTipos = new Set();
+        applyFiltersExcept(['tipo'], sel).forEach(r => {
+            if (Array.isArray(r.BECAS))
+                r.BECAS.forEach(b => {
+                    if (b.TIPO_BECA && becaOk(b, sel.anios, sel.etapaCodes, []))
+                        validTipos.add(b.TIPO_BECA);
+                });
+            else if (r.TIPO_BECA) validTipos.add(r.TIPO_BECA);
+        });
+        document.querySelectorAll('#ms-tipo .ms-opt').forEach(opt => {
             const cb = opt.querySelector('input');
             if (!cb) return;
-            const disabled = aniosValidos !== null && !aniosValidos.has(cb.value);
-            if (disabled) {
-                opt.classList.add('ms-disabled');
-                cb.checked = false;
-            } else {
-                opt.classList.remove('ms-disabled');
-            }
-        });
-
-        updateTrigger('ms-anio', 'Todos');
-    }
-
-    // ── Deshabilitar UNIVERSIDAD cuando Extraordinaria está seleccionada ────────
-    function actualizarTipoPorEtapa() {
-        const wrap = document.getElementById('ms-tipo');
-        if (!wrap) return;
-        const etapasSeleccionadas = getSelected('ms-etapa');
-        const tieneEX = etapasSeleccionadas.includes('EXTRATEMPORANEA');
-        wrap.querySelectorAll('.ms-opt').forEach(opt => {
-            const cb = opt.querySelector('input');
-            if (!cb || cb.value !== 'UNIVERSIDAD') return;
-            if (tieneEX) {
-                opt.classList.add('ms-disabled');
-                cb.checked = false;
-            } else {
-                opt.classList.remove('ms-disabled');
-            }
+            const show = validTipos.has(cb.value);
+            opt.style.display = show ? '' : 'none';
+            if (!show) cb.checked = false;
         });
         updateTrigger('ms-tipo', 'Todos');
-    }
 
-    // ── Deshabilitar Extraordinaria cuando UNIVERSIDAD está seleccionada ────────
-    function actualizarEtapaPorTipo() {
-        const wrap = document.getElementById('ms-etapa');
-        if (!wrap) return;
-        const tiposSeleccionados = getSelected('ms-tipo');
-        const tieneUniversidad = tiposSeleccionados.includes('UNIVERSIDAD');
-        wrap.querySelectorAll('.ms-opt[data-etapa="EX"]').forEach(opt => {
+        // ── Años ──────────────────────────────────────────────────────────────
+        // De los registros que pasan tipo+etapa+sector+municipio+escuela,
+        // contar solo las becas que también pasan tipo y etapa.
+        const validAnios = new Set();
+        applyFiltersExcept(['anio'], sel).forEach(r => {
+            if (Array.isArray(r.BECAS))
+                r.BECAS.forEach(b => {
+                    if (b.PERIODO && becaOk(b, [], sel.etapaCodes, sel.tipos))
+                        validAnios.add(b.PERIODO.split('-')[0]);
+                });
+            else if (r.AÑO) validAnios.add(String(r.AÑO));
+        });
+        document.querySelectorAll('#ms-anio .ms-opt').forEach(opt => {
             const cb = opt.querySelector('input');
             if (!cb) return;
-            if (tieneUniversidad) {
-                opt.classList.add('ms-disabled');
-                cb.checked = false;
-            } else {
-                opt.classList.remove('ms-disabled');
+            const show = validAnios.has(cb.value);
+            opt.style.display = show ? '' : 'none';
+            if (!show) cb.checked = false;
+        });
+        updateTrigger('ms-anio', 'Todos');
+
+        // ── Etapas ────────────────────────────────────────────────────────────
+        // De los registros que pasan tipo+año+sector+municipio+escuela,
+        // contar solo las becas que también pasan tipo y año.
+        const validEtapas = new Set();
+        applyFiltersExcept(['etapa'], sel).forEach(r => {
+            if (Array.isArray(r.BECAS)) {
+                r.BECAS.forEach(b => {
+                    if (b.PERIODO && becaOk(b, sel.anios, [], sel.tipos)) {
+                        const parts = b.PERIODO.split('-');
+                        if (parts.length > 1) validEtapas.add(parts[1]);
+                    }
+                });
+            } else if (r.ETAPA) {
+                validEtapas.add(r.ETAPA === '1RA ETAPA' ? 'E1' : r.ETAPA === '2DA ETAPA' ? 'E2' : 'EX');
             }
         });
+        document.querySelectorAll('#ms-etapa .ms-opt[data-etapa]').forEach(opt => {
+            const show = validEtapas.has(opt.dataset.etapa);
+            opt.style.display = show ? '' : 'none';
+            if (!show) opt.querySelector('input').checked = false;
+        });
         updateTrigger('ms-etapa', 'Todas');
+
+        // ── Sectores ─────────────────────────────────────────────────────────
+        const validSectores = new Set(
+            applyFiltersExcept(['sector'], sel).map(r => r.SECTOR).filter(Boolean)
+        );
+        document.querySelectorAll('#ms-sector .ms-opt').forEach(opt => {
+            const cb = opt.querySelector('input');
+            if (!cb) return;
+            const show = validSectores.has(cb.value);
+            opt.style.display = show ? '' : 'none';
+            if (!show) cb.checked = false;
+        });
+        updateTrigger('ms-sector', 'Todos');
+
+        // ── Municipios ────────────────────────────────────────────────────────
+        const validMunicipios = new Set(
+            applyFiltersExcept(['municipio'], sel).map(r => normalizarMunicipio(r.MUNICIPIO))
+        );
+        document.querySelectorAll('#ms-municipio .ms-opt').forEach(opt => {
+            const cb = opt.querySelector('input');
+            if (!cb) return;
+            const show = validMunicipios.has(cb.value);
+            opt.style.display = show ? '' : 'none';
+            if (!show) cb.checked = false;
+        });
+        updateTrigger('ms-municipio', 'Todos');
+
+        // ── Escuelas ──────────────────────────────────────────────────────────
+        // Usar ESCUELA a nivel de beca (si existe) para respetar el tipo/año/etapa
+        const validEscuelas = new Set();
+        applyFiltersExcept(['escuela'], sel).forEach(r => {
+            if (Array.isArray(r.BECAS) && r.BECAS.length > 0) {
+                r.BECAS.forEach(b => {
+                    if (b.ESCUELA && becaOk(b, sel.anios, sel.etapaCodes, sel.tipos))
+                        validEscuelas.add(b.ESCUELA);
+                });
+                // Fallback: si las becas no tienen ESCUELA individual (datos legacy)
+                if (validEscuelas.size === 0 && r.ESCUELA) validEscuelas.add(r.ESCUELA);
+            } else if (r.ESCUELA) {
+                validEscuelas.add(r.ESCUELA);
+            }
+        });
+        const q = (document.getElementById('escuela-search')?.value || '').trim().toLowerCase();
+        document.querySelectorAll('#ms-escuela .ms-opt').forEach(opt => {
+            const cb = opt.querySelector('input');
+            if (!cb) return;
+            const validByData   = validEscuelas.has(cb.value);
+            const validBySearch = !q || opt.textContent.trim().toLowerCase().includes(q);
+            const show = validByData && validBySearch;
+            opt.style.display = show ? '' : 'none';
+            if (!show) cb.checked = false;
+        });
+        updateTrigger('ms-escuela', 'Todas');
     }
 
     // ── Poblar dropdown de municipios ─────────────────────────────────────────
-    function poblarMunicipios(data) {
+    function poblarMunicipios() {
         const panel = document.querySelector('#ms-municipio .ms-panel');
         if (!panel) return;
         panel.innerHTML = '';
@@ -223,7 +295,7 @@
         });
         panel.addEventListener('change', () => {
             updateTrigger('ms-municipio', 'Todos');
-            filtrarEscuelasSegunMunicipio();
+            actualizarOpcionesVisibles();
             scheduleAplicar();
         });
     }
@@ -233,23 +305,26 @@
         const checkboxes = document.querySelector('#ms-escuela .ms-checkboxes');
         if (!checkboxes) return;
 
-        // Construir mapa escuela → municipio para el filtrado cruzado
-        const munPorEscuela = {};
+        // Recoger escuelas desde BECAS individuales si tienen el campo (datos nuevos)
+        // para que el listado sea preciso por tipo; fallback al campo raíz ESCUELA
+        const escuelasSet = new Set();
         data.forEach(d => {
-            if (d.ESCUELA) munPorEscuela[d.ESCUELA] = d.MUNICIPIO || '';
+            if (Array.isArray(d.BECAS) && d.BECAS.some(b => b.ESCUELA)) {
+                d.BECAS.forEach(b => { if (b.ESCUELA) escuelasSet.add(b.ESCUELA); });
+            } else if (d.ESCUELA) {
+                escuelasSet.add(d.ESCUELA);
+            }
         });
-
-        const escuelas = [...new Set(data.map(d => d.ESCUELA))].filter(Boolean).sort();
+        const escuelas = [...escuelasSet].filter(Boolean).sort();
         checkboxes.innerHTML = '';
         escuelas.forEach(e => {
             const lbl = document.createElement('label');
             lbl.className = 'ms-opt';
-            lbl.dataset.municipio = munPorEscuela[e] || '';
             const cb = document.createElement('input');
             cb.type  = 'checkbox';
             cb.value = e;
             lbl.appendChild(cb);
-            lbl.append(' ' + e.charAt(0).toUpperCase() + e.slice(1).toLowerCase());
+            lbl.append(' ' + e);
             checkboxes.appendChild(lbl);
         });
         checkboxes.addEventListener('change', () => {
@@ -261,34 +336,10 @@
         const searchInput = document.getElementById('escuela-search');
         if (searchInput) {
             searchInput.addEventListener('input', () => {
-                const q = searchInput.value.trim().toLowerCase();
-                checkboxes.querySelectorAll('.ms-opt').forEach(opt => {
-                    const txt = opt.textContent.trim().toLowerCase();
-                    opt.style.display = txt.includes(q) ? '' : 'none';
-                });
+                actualizarOpcionesVisibles();
             });
-            // Evitar que un clic en el input cierre el panel
             searchInput.addEventListener('click', e => e.stopPropagation());
         }
-    }
-
-    // ── Filtrar escuelas visibles según municipios seleccionados ─────────────
-    function filtrarEscuelasSegunMunicipio() {
-        const municipios = getSelected('ms-municipio');
-        const checkboxes = document.querySelector('#ms-escuela .ms-checkboxes');
-        if (!checkboxes) return;
-        checkboxes.querySelectorAll('.ms-opt').forEach(opt => {
-            if (municipios.length === 0) {
-                opt.style.display = '';
-            } else {
-                const mun = normalizarMunicipio(opt.dataset.municipio || '');
-                const visible = municipios.includes(mun);
-                opt.style.display = visible ? '' : 'none';
-                // Desmarcar opciones ocultas para no contaminar el filtro de escuelas
-                if (!visible) opt.querySelector('input').checked = false;
-            }
-        });
-        updateTrigger('ms-escuela', 'Todas');
     }
 
     function scheduleAplicar() {
@@ -298,56 +349,49 @@
 
     // ── Aplicar filtros y re-renderizar ──────────────────────────────────────
     function aplicar() {
-        const sector   = getSelected('ms-sector');
-        const anios    = getSelected('ms-anio').map(Number);
-        const etapas   = getSelected('ms-etapa');
-        const tipos    = getSelected('ms-tipo');
-        const municipios = getSelected('ms-municipio');
-        const escuelas = getSelected('ms-escuela');
-
-        // Convertir etapa label → código interno
-        const etapaCodes = etapas.map(e =>
-            e === '1RA ETAPA' ? 'E1' : e === '2DA ETAPA' ? 'E2' : 'EX'
-        );
+        const sel = getSeleccion();
 
         let filtered = window.dashDataFull;
 
-        if (sector.length)     filtered = filtered.filter(d => sector.includes(d.SECTOR));
-        // Filtro combinado: año + etapa + tipo con lógica AND por beca
-        // (evita falsos positivos cuando un registro tiene becas en años/etapas distintas)
-        if (anios.length || etapas.length || tipos.length) {
-            filtered = filtered.filter(d => {
-                if (Array.isArray(d.BECAS) && d.BECAS.length > 0) {
-                    return d.BECAS.some(b => {
-                        const okAnio  = !anios.length      || (b.PERIODO && anios.some(a => b.PERIODO.startsWith(a + '-')));
-                        const okEtapa = !etapaCodes.length || (b.PERIODO && etapaCodes.some(ec => b.PERIODO.endsWith('-' + ec)));
-                        const okTipo  = !tipos.length      || tipos.includes(b.TIPO_BECA);
-                        return okAnio && okEtapa && okTipo;
-                    });
-                }
-                // Registro plano (sin array BECAS)
-                const okAnio  = !anios.length  || anios.includes(d.AÑO);
-                const okEtapa = !etapas.length || etapas.includes(d.ETAPA);
-                const okTipo  = !tipos.length  || tipos.includes(d.TIPO_BECA);
-                return okAnio && okEtapa && okTipo;
-            });
+        if (sel.sector.length)     filtered = filtered.filter(d => sel.sector.includes(d.SECTOR));
+        // Filtro combinado año + etapa + tipo (AND por beca)
+        if (sel.anios.length || sel.etapaCodes.length || sel.tipos.length) {
+            filtered = filtered.filter(d => becasMatchFilter(
+                d,
+                sel.anios.length      ? sel.anios      : null,
+                sel.etapaCodes.length ? sel.etapaCodes : null,
+                sel.tipos.length      ? sel.tipos      : null
+            ));
         }
-        if (municipios.length) filtered = filtered.filter(d => municipios.includes(normalizarMunicipio(d.MUNICIPIO)));
-        if (escuelas.length)   filtered = filtered.filter(d => escuelas.includes(d.ESCUELA));
+        if (sel.municipios.length) filtered = filtered.filter(d => sel.municipios.includes(normalizarMunicipio(d.MUNICIPIO)));
+        // Filtrar por escuela: comparar contra ESCUELA del registro. Cuando hay filtro
+        // de tipo/año/etapa, el deep filter posterior corregirá ESCUELA al nivel de beca.
+        if (sel.escuelas.length)   filtered = filtered.filter(d => {
+            if (Array.isArray(d.BECAS) && d.BECAS.some(b => b.ESCUELA))
+                return d.BECAS.some(b => b.ESCUELA && sel.escuelas.includes(b.ESCUELA));
+            return sel.escuelas.includes(d.ESCUELA);
+        });
 
-        // ── Filtro profundo: recortar BECAS según año/etapa/tipo seleccionados ──
-        if (anios.length || etapas.length || tipos.length) {
+        // ── Filtro profundo: recortar BECAS y recalcular importes/escuela ─────
+        if (sel.anios.length || sel.etapaCodes.length || sel.tipos.length) {
             filtered = filtered.map(d => {
                 if (!Array.isArray(d.BECAS) || d.BECAS.length === 0) return d;
                 let becas = d.BECAS;
-                if (anios.length)
-                    becas = becas.filter(b => b.PERIODO && anios.some(a => b.PERIODO.startsWith(a + '-')));
-                if (etapaCodes.length)
-                    becas = becas.filter(b => b.PERIODO && etapaCodes.some(ec => b.PERIODO.endsWith('-' + ec)));
-                if (tipos.length)
-                    becas = becas.filter(b => tipos.includes(b.TIPO_BECA));
+                if (sel.anios.length)
+                    becas = becas.filter(b => b.PERIODO && sel.anios.some(a => b.PERIODO.startsWith(a + '-')));
+                if (sel.etapaCodes.length)
+                    becas = becas.filter(b => b.PERIODO && sel.etapaCodes.some(ec => b.PERIODO.endsWith('-' + ec)));
+                if (sel.tipos.length)
+                    becas = becas.filter(b => sel.tipos.includes(b.TIPO_BECA));
                 const periodos = [...new Set(becas.map(b => b.PERIODO).filter(Boolean))];
-                return { ...d, BECAS: becas, PERIODOS: periodos, NUM_BECAS: becas.length };
+                const importe  = becas.reduce((s, b) => s + (b.IMPORTE || 0), 0);
+                // Actualizar ESCUELA y SECTOR del registro al de la primera beca filtrada
+                // (corrige el caso en que latest_rec es de un tipo/año diferente)
+                const firstBeca = becas[0];
+                const escuela = (firstBeca?.ESCUELA) || d.ESCUELA;
+                const sector  = (firstBeca?.SECTOR)  || d.SECTOR;
+                return { ...d, BECAS: becas, PERIODOS: periodos, NUM_BECAS: becas.length,
+                         IMPORTE: importe, ESCUELA: escuela, SECTOR: sector };
             });
         }
 
@@ -359,26 +403,21 @@
 
     // ── Limpiar todos los filtros ────────────────────────────────────────────
     function limpiarFiltros() {
-        ['ms-sector','ms-anio','ms-etapa','ms-tipo','ms-municipio','ms-escuela'].forEach(id => {
+        ['ms-tipo','ms-anio','ms-etapa','ms-sector','ms-municipio','ms-escuela'].forEach(id => {
             document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => {
                 cb.checked = false;
+            });
+            document.querySelectorAll(`#${id} .ms-opt`).forEach(opt => {
+                opt.style.display = '';
             });
             const placeholder = (id === 'ms-etapa' || id === 'ms-escuela') ? 'Todas' : 'Todos';
             updateTrigger(id, placeholder);
         });
-        // Limpiar búsqueda de escuela y mostrar todas las opciones
+
         const searchInput = document.getElementById('escuela-search');
-        if (searchInput) {
-            searchInput.value = '';
-            document.querySelectorAll('#ms-escuela .ms-opt').forEach(opt => {
-                opt.style.display = '';
-            });
-        }
-        actualizarOpcionesEtapa();
-        actualizarOpcionesAnio();
-        actualizarTipoPorEtapa();
-        actualizarEtapaPorTipo();
-        filtrarEscuelasSegunMunicipio();
+        if (searchInput) searchInput.value = '';
+
+        actualizarOpcionesVisibles();
         aplicar();
     }
 
@@ -387,16 +426,19 @@
         if (window._filtrosInit) return;
         window._filtrosInit = true;
 
-        construirMapsAnioEtapa(window.dashDataFull);
-        poblarMunicipios(window.dashDataFull);
+        poblarMunicipios();
         poblarEscuelas(window.dashDataFull);
 
-        initWrap('ms-tipo',      'Todos', actualizarEtapaPorTipo);
-        initWrap('ms-sector',    'Todos');
-        initWrap('ms-anio',      'Todos', () => { actualizarOpcionesEtapa(); actualizarEtapaPorTipo(); });
-        initWrap('ms-etapa',     'Todas', () => { actualizarOpcionesAnio(); actualizarTipoPorEtapa(); });
-        // ms-municipio y ms-escuela se inicializan en sus funciones poblar*
-        // pero sí necesitamos el toggle del botón
+        // Filtros estáticos (Tipo, Año, Etapa, Sector)
+        ['ms-tipo', 'ms-anio', 'ms-etapa', 'ms-sector'].forEach(id => {
+            const placeholder = (id === 'ms-etapa') ? 'Todas' : 'Todos';
+            initWrap(id, placeholder, () => {
+                actualizarOpcionesVisibles();
+                scheduleAplicar();
+            });
+        });
+
+        // Toggle de botón para municipio y escuela (change listeners en poblar*)
         ['ms-municipio', 'ms-escuela'].forEach(wrapId => {
             const wrap = document.getElementById(wrapId);
             if (!wrap) return;
@@ -418,7 +460,10 @@
         });
 
         document.getElementById('filtro-limpiar')?.addEventListener('click', limpiarFiltros);
+
+        // Calcular opciones válidas con selección inicial vacía
+        actualizarOpcionesVisibles();
+
     }, { once: true });
 
 })();
-

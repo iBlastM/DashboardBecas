@@ -23,7 +23,7 @@ DST_B = ROOT / "data_b.json"
 
 # Columnas para cada archivo
 COLS_A = ["CURP", "GENERO", "EDAD", "COLONIA", "SECTOR", "NIVEL_EDUCATIVO",
-          "GRADO", "AÑO", "ETAPA", "TIPO_BECA", "IMPORTE",
+          "GRADO", "PROMEDIO", "AÑO", "ETAPA", "TIPO_BECA", "IMPORTE",
           "NUM_BECAS", "AÑOS", "PERIODOS", "BECAS"]
 
 COLS_B = ["MUNICIPIO", "MUNICIPIO_ESCUELA", "ESCUELA", "DELEGACION", "EDAD_TUTOR", "GENERO_TUTOR",
@@ -35,7 +35,7 @@ INT_FIELDS = {"EDAD", "GRADO", "AÑO", "IMPORTE", "NUM_BECAS", "EDAD_TUTOR",
               "SECCION_ELECTORAL", "DISTRITO_FEDERAL", "DISTRITO_LOCAL"}
 
 # Campos de coordenadas — se mantienen como float
-FLOAT_FIELDS = {"LATITUD", "LONGITUD", "LAT_ESCUELA", "LONG_ESCUELA"}
+FLOAT_FIELDS = {"LATITUD", "LONGITUD", "LAT_ESCUELA", "LONG_ESCUELA", "PROMEDIO"}
 
 # Campos que son listas/objetos — se copian tal cual sin conversión numérica
 LIST_FIELDS = {"AÑOS", "PERIODOS", "BECAS"}

@@ -1,6 +1,6 @@
 <h2 class="section-title">Económico</h2>
 
-<!-- Fila 1: Gasto por Nivel · Inversión por Sector · Promedio de Apoyo -->
+<!-- Fila 1: Inversión por Nivel · Inversión por Sector · Promedio de Apoyo -->
 <div class="charts-grid cols-3">
     <div class="chart-card">
         <div id="chart-gasto-nivel" class="chart-container"></div>
@@ -13,19 +13,20 @@
     </div>
 </div>
 
-<!-- Fila 2: Distribución del Recurso por Tipo de Beca (ancho completo) -->
+<!-- Fila 2: Distribución del Recurso Público por Tipo de Beca (ancho completo) -->
 <div class="charts-grid cols-1">
     <div class="chart-card">
         <div id="chart-recurso-tipo" class="chart-container chart-xl"></div>
     </div>
 </div>
 
-<!-- Fila 3: Top Escuelas · Top Colonias -->
+<!-- Fila 3: Comparativa Escuelas · Comparativa Colonias -->
 <div class="charts-grid cols-2">
     <div class="chart-card">
-        <div class="top-selector" data-chart="chart-top10-escuelas-invest">
-            <span class="top-selector-label">Mostrar:</span>
-            <select class="top-select">
+        <div class="view-toggle">
+            <button class="vt-btn active" data-view="top">Top</button>
+            <button class="vt-btn" data-view="comparativa">Comparativa</button>
+            <select class="top-select" id="escuelas-top-n" style="margin-left:6px">
                 <option value="5">Top 5</option>
                 <option value="10" selected>Top 10</option>
                 <option value="15">Top 15</option>
@@ -34,14 +35,94 @@
         <div id="chart-top10-escuelas-invest" class="chart-container chart-tall"></div>
     </div>
     <div class="chart-card">
-        <div class="top-selector" data-chart="chart-top10-colonias-invest">
-            <span class="top-selector-label">Mostrar:</span>
-            <select class="top-select">
+        <div class="view-toggle">
+            <button class="vt-btn active" data-view="top">Top</button>
+            <button class="vt-btn" data-view="comparativa">Comparativa</button>
+            <select class="top-select" id="colonias-top-n" style="margin-left:6px">
                 <option value="5">Top 5</option>
                 <option value="10" selected>Top 10</option>
                 <option value="15">Top 15</option>
             </select>
         </div>
         <div id="chart-top10-colonias-invest" class="chart-container chart-tall"></div>
+    </div>
+</div>
+
+<!-- Modal: selección de Escuelas -->
+<div id="modal-escuelas" class="rng-modal-overlay" hidden>
+    <div class="rng-modal">
+        <div class="rng-modal-header">
+            <span class="rng-modal-title">Seleccionar Escuelas</span>
+            <button class="rng-modal-close">×</button>
+        </div>
+        <div class="rng-modal-actions">
+            <button class="rng-action-btn" data-action="all">Seleccionar todos</button>
+            <button class="rng-action-btn" data-action="none">Limpiar selección</button>
+        </div>
+        <div style="padding: 0 18px 6px;">
+            <input type="text" class="rng-search-input" placeholder="Buscar escuela...">
+        </div>
+        <div class="rng-modal-checks" id="modal-escuelas-checks"></div>
+        <div class="rng-modal-footer">
+            <button class="rng-footer-btn rng-cancel-btn">Cancelar</button>
+            <button class="rng-footer-btn rng-apply-btn" data-apply="escuelas">Aplicar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: selección de Colonias -->
+<div id="modal-colonias" class="rng-modal-overlay" hidden>
+    <div class="rng-modal">
+        <div class="rng-modal-header">
+            <span class="rng-modal-title">Seleccionar Colonias</span>
+            <button class="rng-modal-close">×</button>
+        </div>
+        <div class="rng-modal-actions">
+            <button class="rng-action-btn" data-action="all">Seleccionar todos</button>
+            <button class="rng-action-btn" data-action="none">Limpiar selección</button>
+        </div>
+        <div style="padding: 0 18px 6px;">
+            <input type="text" class="rng-search-input" placeholder="Buscar colonia...">
+        </div>
+        <div class="rng-modal-checks" id="modal-colonias-checks"></div>
+        <div class="rng-modal-footer">
+            <button class="rng-footer-btn rng-cancel-btn">Cancelar</button>
+            <button class="rng-footer-btn rng-apply-btn" data-apply="colonias">Aplicar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Inversión vs Beneficiarios por Delegación (movido de Territorial) ── -->
+<div class="charts-grid cols-1">
+    <div class="chart-card">
+        <div class="view-toggle">
+            <button class="vt-btn active" data-view="top">Top</button>
+            <button class="vt-btn" data-view="comparativa">Comparativa</button>
+            <select class="top-select" id="del-scatter-top-n" style="margin-left:6px">
+                <option value="5">Top 5</option>
+                <option value="10">Top 10</option>
+                <option value="15" selected>Top 15</option>
+            </select>
+        </div>
+        <div id="chart-delegacion-scatter" class="chart-container chart-xl"></div>
+    </div>
+</div>
+
+<!-- Modal: Delegaciones (Inversión vs Beneficiarios) -->
+<div id="modal-del-scatter" class="rng-modal-overlay" hidden>
+    <div class="rng-modal">
+        <div class="rng-modal-header">
+            <span class="rng-modal-title">Seleccionar Delegaciones</span>
+            <button class="rng-modal-close">×</button>
+        </div>
+        <div class="rng-modal-actions">
+            <button class="rng-action-btn" data-action="all">Seleccionar todos</button>
+            <button class="rng-action-btn" data-action="none">Limpiar selección</button>
+        </div>
+        <div class="rng-modal-checks" id="modal-del-scatter-checks"></div>
+        <div class="rng-modal-footer">
+            <button class="rng-footer-btn rng-cancel-btn">Cancelar</button>
+            <button class="rng-footer-btn rng-apply-btn" data-apply="del-scatter">Aplicar</button>
+        </div>
     </div>
 </div>

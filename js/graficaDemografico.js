@@ -83,14 +83,14 @@ document.addEventListener('datosListos', () => {
     if (elGS) {
         elGS.classList.remove('loading');
         const sectoresRaw = [...new Set(data.map(d => d.SECTOR))].filter(Boolean).sort();
-        const sectores = sectoresRaw.map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase());
-        const gMap = [
-            { key: 'MUJ', label: 'Mujer',  color: C.naranja },
-            { key: 'HOM', label: 'Hombre', color: C.verde   },
-            { key: 'MAS', label: 'Masculino', color: C.verde },
-        ];
+        // Corregir acentos en etiquetas de sector
+        const _accentMapGS = { 'PUBLICA': 'Pública', 'PUBLICO': 'Público', 'PRIVADA': 'Privada', 'PRIVADO': 'Privado' };
+        const _normGS = s => s.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const sectores = sectoresRaw.map(s => _accentMapGS[_normGS(s)] || (s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()));
         // Detectar etiquetas reales en el dataset
         const generosUnicos = [...new Set(data.map(d => d.GENERO).filter(Boolean))];
+        const isLightGS = document.documentElement.dataset.theme === 'light';
+        const textColGS = isLightGS ? '#1a2e05' : '#FFFFFF';
         const traces = generosUnicos.map((g, i) => ({
             type: 'bar',
             name: g.charAt(0) + g.slice(1).toLowerCase(),
@@ -99,14 +99,39 @@ document.addEventListener('datosListos', () => {
             marker: { color: C.paleta[i % C.paleta.length] },
             text: sectoresRaw.map(s => data.filter(d => d.SECTOR === s && d.GENERO === g).length.toLocaleString('es-MX')),
             textposition: 'outside',
-            textfont: { color: '#FFF', size: 11 },
+            textfont: { color: textColGS, size: 11 },
+            cliponaxis: false,
             hovertemplate: '<b>%{x} · ' + (g.charAt(0).toUpperCase() + g.slice(1).toLowerCase()) + '</b><br>%{y:,} becarios<extra></extra>',
         }));
+        const maxYGS = Math.max(...traces.flatMap(t => t.y), 1);
         Plotly.newPlot(elGS, traces, getLayout('Género por Sector', {
             barmode: 'group',
-            yaxis: { title: 'Beneficiarios', gridcolor: 'rgba(255,255,255,0.08)' },
-            margin: { t: 58, r: 18, b: 58, l: 72 },
+            showlegend: false,
+            yaxis: {
+                title: 'Beneficiarios',
+                gridcolor: 'rgba(255,255,255,0.08)',
+                tickformat: ',',
+                range: [0, maxYGS * 1.28],
+            },
+            margin: { t: 58, r: 18, b: 58, l: 80 },
         }), plotConfig);
+        // Dropdown de filtro de género (reemplaza la leyenda)
+        const cardGS = elGS.closest('.chart-card');
+        if (!cardGS.querySelector('.genero-sector-filter')) {
+            const selDivGS = document.createElement('div');
+            selDivGS.className = 'top-selector genero-sector-filter';
+            selDivGS.innerHTML = `<span class="top-selector-label">Género:</span>
+                <select class="top-select" id="sel-genero-sector">
+                    <option value="all">Todos</option>
+                    ${generosUnicos.map((g, i) => `<option value="${i}">${g.charAt(0).toUpperCase() + g.slice(1).toLowerCase()}</option>`).join('')}
+                </select>`;
+            cardGS.insertBefore(selDivGS, elGS);
+            document.getElementById('sel-genero-sector').addEventListener('change', function () {
+                const idx = this.value;
+                const vis = generosUnicos.map((_, i) => idx === 'all' || String(i) === idx ? true : 'legendonly');
+                Plotly.restyle(elGS, { visible: vis });
+            });
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -115,7 +140,6 @@ document.addEventListener('datosListos', () => {
     const elPir = document.getElementById('chart-piramide');
     if (elPir) {
         elPir.classList.remove('loading');
-        const generosUnicos = [...new Set(data.map(d => d.GENERO).filter(Boolean))];
         const esMujer  = g => g && (g.toUpperCase().startsWith('MUJ') || g.toUpperCase().startsWith('FEM'));
         const esHombre = g => g && (g.toUpperCase().startsWith('HOM') || g.toUpperCase().startsWith('MAS'));
 
@@ -127,6 +151,10 @@ document.addEventListener('datosListos', () => {
 
         const yM = rangos.map(r => -cuenta(esMujer,  r));
         const yH = rangos.map(r =>  cuenta(esHombre, r));
+        const maxAbsPir = Math.max(...yM.map(Math.abs), ...yH, 1);
+
+        const isLightPir = document.documentElement.dataset.theme === 'light';
+        const textColPir = isLightPir ? '#1a2e05' : '#FFFFFF';
 
         Plotly.newPlot(elPir, [
             {
@@ -136,7 +164,8 @@ document.addEventListener('datosListos', () => {
                 customdata: yM.map(v => Math.abs(v)),
                 text: yM.map(v => Math.abs(v).toLocaleString('es-MX')),
                 textposition: 'outside',
-                textfont: { color: '#FFF', size: 10 },
+                textfont: { color: textColPir, size: 10 },
+                cliponaxis: false,
                 hovertemplate: '<b>%{y}</b><br>%{customdata:,} mujeres<extra></extra>',
             },
             {
@@ -145,22 +174,44 @@ document.addEventListener('datosListos', () => {
                 marker: { color: C.verde },
                 text: yH.map(v => v.toLocaleString('es-MX')),
                 textposition: 'outside',
-                textfont: { color: '#FFF', size: 10 },
+                textfont: { color: textColPir, size: 10 },
+                cliponaxis: false,
                 hovertemplate: '<b>%{y}</b><br>%{value:,} hombres<extra></extra>',
             },
         ], getLayout('Pirámide de Edades', {
             barmode: 'overlay',
+            showlegend: false,
             xaxis: {
                 title: 'Becarios',
                 tickvals: [],
                 zeroline: true,
                 zerolinecolor: 'rgba(255,255,255,0.4)',
                 zerolinewidth: 2,
+                range: [-maxAbsPir * 1.35, maxAbsPir * 1.35],
             },
             yaxis: { title: 'Rango de edad' },
-            margin: { t: 58, r: 80, b: 84, l: 60 },
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.22 },
+            margin: { t: 58, r: 90, b: 48, l: 72 },
         }), plotConfig);
+        // Dropdown de filtro de género (reemplaza la leyenda)
+        const cardPir = elPir.closest('.chart-card');
+        if (!cardPir.querySelector('.piramide-filter')) {
+            const selDivPir = document.createElement('div');
+            selDivPir.className = 'top-selector piramide-filter';
+            selDivPir.innerHTML = `<span class="top-selector-label">Género:</span>
+                <select class="top-select" id="sel-piramide">
+                    <option value="all">Ambos</option>
+                    <option value="0">Mujer</option>
+                    <option value="1">Hombre</option>
+                </select>`;
+            cardPir.insertBefore(selDivPir, elPir);
+            document.getElementById('sel-piramide').addEventListener('change', function () {
+                const idx = this.value;
+                Plotly.restyle(elPir, { visible: [
+                    idx === 'all' || idx === '0' ? true : 'legendonly',
+                    idx === 'all' || idx === '1' ? true : 'legendonly',
+                ]});
+            });
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -270,9 +321,11 @@ document.addEventListener('datosListos', () => {
         const renderTopCurps = (n) => {
             const puestos = todasClaves.slice(0, n);
 
-            const etiquetas  = puestos.map((nb, i) => `#${i + 1} · ${nb} becas  (${grupos[nb].curps.length.toLocaleString('es-MX')} benef.)`);
+            const etiquetas  = puestos.map(nb => `${nb} Becas - ${grupos[nb].curps.length.toLocaleString('es-MX')} Beneficiarios`);
             const cantidades = puestos.map(nb => grupos[nb].curps.length);
             const maxVal     = Math.max(...cantidades, 1);
+            const isLightTop = document.documentElement.dataset.theme === 'light';
+            const textColTop = isLightTop ? '#1a2e05' : '#FFFFFF';
 
             const coloresTop = puestos.map((_, i) => {
                 const t = i / Math.max(puestos.length - 1, 1);
@@ -293,13 +346,14 @@ document.addEventListener('datosListos', () => {
                 },
                 text: cantidades.map(v => v.toLocaleString('es-MX')),
                 textposition: 'outside',
-                textfont: { color: '#FFF', size: 11 },
+                textfont: { color: textColTop, size: 11 },
                 cliponaxis: false,
                 hoverinfo: 'none',
-            }], getLayout(`Top ${n} Puestos · Número de Becas Otorgadas por Beneficiario`, {
+            }], getLayout('Número de Becas Otorgadas por Beneficiario', {
                 xaxis: {
-                    title: 'Beneficiarios en el puesto',
+                    title: '',
                     gridcolor: 'rgba(255,255,255,0.08)',
+                    tickformat: ',',
                     range: [0, maxVal * 1.2],
                 },
                 yaxis: {
